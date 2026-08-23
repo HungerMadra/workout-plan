@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Fitness Journey Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  body { background: #0D0D0D; color: white; font-family: 'DM Sans', sans-serif; min-height: 100vh; -webkit-tap-highlight-color: transparent; }
+
+  /* HEADER */
+  .header { background: linear-gradient(135deg, #1a0810 0%, #0D0D0D 60%); border-bottom: 1px solid #1e1e1e; padding: 24px 18px 18px; }
+  .header-inner { max-width: 640px; margin: 0 auto; }
+  .header-row { display: flex; align-items: flex-start; justify-content: space-between; }
+  .logo-big { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: white; letter-spacing: 2px; line-height: 1; }
+  .logo-big span { color: #FF4D6D; }
+  .logo-sub { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: #444; letter-spacing: 3px; margin-top: 2px; }
+  .header-meta { font-size: 11px; color: #444; font-weight: 500; margin-top: 8px; }
+  .week-pct { font-family: 'Bebas Neue', sans-serif; font-size: 30px; color: #FF4D6D; text-align: right; }
+  .week-label { font-size: 10px; color: #444; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px; text-align: right; }
+  .prog-bar-bg { height: 5px; background: #1e1e1e; border-radius: 3px; overflow: hidden; margin-top: 14px; }
+  .prog-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #FF4D6D, #FF8FA3); transition: width 0.4s ease; }
+
+  /* BODY */
+  .body { max-width: 640px; margin: 0 auto; padding: 0 16px 60px; }
+
+  /* MONTH TABS */
+  .month-row { display: flex; gap: 8px; padding: 18px 0 6px; flex-wrap: wrap; }
+  .month-btn { background: transparent; border: 1px solid #2a2a2a; color: #666; padding: 8px 14px; border-radius: 50px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; transition: all 0.2s; }
+  .month-btn.active { background: #FF4D6D; border-color: #FF4D6D; color: white; }
+
+  /* VIEW TABS */
+  .view-tabs { display: flex; border-bottom: 1px solid #1e1e1e; margin-bottom: 18px; margin-top: 4px; }
+  .view-tab { background: transparent; border: none; border-bottom: 2px solid transparent; color: #444; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; padding: 10px 16px; transition: all 0.2s; margin-bottom: -1px; }
+  .view-tab.active { color: #FF4D6D; border-bottom-color: #FF4D6D; }
+
+  /* DAY PILLS */
+  .day-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 14px; scrollbar-width: none; }
+  .day-scroll::-webkit-scrollbar { display: none; }
+  .day-pill { flex-shrink: 0; background: #1a1a1a; border: 1.5px solid #2a2a2a; border-radius: 14px; padding: 10px 14px; cursor: pointer; font-size: 11px; font-weight: 700; color: #555; text-align: center; min-width: 70px; transition: all 0.2s; }
+  .day-pill.active { background: #1e1014; border-color: #FF4D6D; color: #FF4D6D; }
+  .day-pill.done-pill { border-color: #06D6A055; }
+  .day-pill .sub { font-size: 13px; margin-top: 4px; }
+
+  /* WORKOUT CARD */
+  .workout-header { border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+  .workout-day-label { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 1px; }
+  .workout-title { font-size: 13px; color: #ccc; font-weight: 500; margin-top: 2px; }
+  .workout-pct { font-family: 'Bebas Neue', sans-serif; font-size: 26px; text-align: right; }
+  .workout-count { font-size: 11px; color: #555; margin-top: 2px; text-align: right; }
+
+  /* EXERCISES */
+  .ex-list { display: flex; flex-direction: column; gap: 8px; }
+  .ex-row { display: flex; align-items: center; gap: 12px; padding: 13px 16px; background: #111; border-radius: 12px; border: 1.5px solid #1e1e1e; cursor: pointer; transition: all 0.15s; }
+  .ex-row.checked { opacity: 0.5; }
+  .ex-row:active { transform: scale(0.99); }
+  .checkbox { width: 22px; height: 22px; border-radius: 6px; border: 2px solid #333; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all 0.2s; }
+  .checkbox.on { background: #FF4D6D; border-color: #FF4D6D; }
+  .ex-name { font-size: 14px; font-weight: 600; color: #e0e0e0; transition: all 0.2s; }
+  .ex-row.checked .ex-name { text-decoration: line-through; color: #555; }
+  .ex-count { font-size: 13px; font-weight: 700; color: #FF4D6D; margin-top: 2px; transition: all 0.2s; }
+  .ex-row.checked .ex-count { color: #444; }
+  .badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; letter-spacing: 0.5px; white-space: nowrap; flex-shrink: 0; }
+
+  /* COMPLETE BANNER */
+  .complete-banner { background: #06D6A011; border: 1.5px solid #06D6A044; border-radius: 12px; padding: 14px 18px; margin-top: 14px; text-align: center; }
+  .complete-banner .icon { font-size: 22px; }
+  .complete-banner .label { color: #06D6A0; font-weight: 700; font-size: 15px; margin-top: 4px; }
+  .complete-banner .sub { color: #555; font-size: 12px; margin-top: 4px; }
+
+  .reset-row { text-align: right; margin-top: 12px; }
+  .reset-btn { background: transparent; border: 1px solid #2a2a2a; color: #555; font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 6px 14px; border-radius: 8px; cursor: pointer; }
+
+  /* TIPS */
+  .tip-card { background: #111; border: 1.5px solid #1e1e1e; border-radius: 14px; padding: 18px 18px; margin-bottom: 12px; }
+  .tip-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; margin-bottom: 10px; }
+  .tip-body { font-size: 13px; color: #999; line-height: 1.8; }
+  .tip-body strong { color: #e0e0e0; }
+  .tip-line { margin-top: 5px; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: #1a1a1a; border: 1.5px solid #FF4D6D55; color: white; padding: 12px 22px; border-radius: 50px; font-size: 13px; font-weight: 500; z-index: 999; white-space: nowrap; animation: fadeIn 0.3s ease; pointer-events: none; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div class="header-row">
+      <div>
+        <div class="logo-big">YOUR FIT<span>NESS</span></div>
+        <div class="logo-sub">JOURNEY PLAN</div>
+        <div class="header-meta">29 yrs · 167 lbs · Goal: Stronger + Leaner</div>
+      </div>
+      <div>
+        <div class="week-label">Week Progress</div>
+        <div class="week-pct" id="weekPct">0%</div>
+      </div>
+    </div>
+    <div class="prog-bar-bg">
+      <div class="prog-bar-fill" id="weekBar" style="width:0%"></div>
+    </div>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="body">
+
+  <!-- MONTH BUTTONS -->
+  <div class="month-row">
+    <button class="month-btn active" onclick="setMonth(0)">Month 1 · Foundation</button>
+    <button class="month-btn" onclick="setMonth(1)">Month 2 · Build</button>
+    <button class="month-btn" onclick="setMonth(2)">Month 3 · Intensity</button>
+  </div>
+
+  <!-- VIEW TABS -->
+  <div class="view-tabs">
+    <button class="view-tab active" onclick="setView('plan')">Workout Plan</button>
+    <button class="view-tab" onclick="setView('tips')">Nutrition & Tips</button>
+  </div>
+
+  <!-- PLAN VIEW -->
+  <div id="planView">
+
+    <!-- DAY PILLS -->
+    <div class="day-scroll" id="dayPills"></div>
+
+    <!-- WORKOUT AREA -->
+    <div id="workoutArea"></div>
+
+  </div>
+
+  <!-- TIPS VIEW -->
+  <div id="tipsView" class="hidden">
+    <div class="tip-card">
+      <div class="tip-title" style="color:#FF4D6D">🎯 WEIGHT LOSS REALITY</div>
+      <div class="tip-body">
+        Losing <strong>5–10 lbs/month</strong> is achievable but requires both <strong>exercise + caloric deficit</strong>. 1 lb of fat = ~3,500 calories burned or cut. This plan handles the burn side — aim to also cut <strong>500–700 cal/day from food</strong> for the best results.
+      </div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-title" style="color:#F18F01">🥗 NUTRITION BASICS</div>
+      <div class="tip-body">
+        <div class="tip-line">✅ <strong>Eat more protein</strong> — chicken, eggs, fish, beans (~120g/day)</div>
+        <div class="tip-line">✅ <strong>Cut liquid calories</strong> — sodas, juice, alcohol are the biggest saboteurs</div>
+        <div class="tip-line">✅ <strong>Eat whole foods</strong> — veggies, rice, oats, healthy fats</div>
+        <div class="tip-line">✅ <strong>Don't skip meals</strong> — 3 meals + 1–2 light snacks</div>
+        <div class="tip-line">✅ <strong>Calorie target:</strong> ~1,500–1,700 cal/day for your stats</div>
+      </div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-title" style="color:#06D6A0">💧 HYDRATION</div>
+      <div class="tip-body">Drink <strong>2.5–3 litres of water daily</strong>. Start every morning with a big glass before coffee. Water suppresses appetite, boosts metabolism, and speeds recovery.</div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-title" style="color:#845EC2">😴 SLEEP & RECOVERY</div>
+      <div class="tip-body">Aim for <strong>7–9 hours of sleep</strong>. Poor sleep raises cortisol (the stress hormone) which stores belly fat. Treat sleep as seriously as workouts.</div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-title" style="color:#00B4D8">📈 MONTHLY PROGRESSION</div>
+      <div class="tip-body">
+        <div class="tip-line"><strong style="color:#FF4D6D">Month 1 (Foundation):</strong> Learn movements. Focus on form. Build the habit.</div>
+        <div class="tip-line"><strong style="color:#F18F01">Month 2 (Build):</strong> Numbers increase ~30%. You'll feel noticeably stronger.</div>
+        <div class="tip-line"><strong style="color:#06D6A0">Month 3 (Intensity):</strong> Full output — this is where the transformation shows.</div>
+      </div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-title" style="color:#FF4D6D">⚖️ DUMBBELL GUIDE</div>
+      <div class="tip-body">
+        <div class="tip-line"><strong>Upper body:</strong> Start with 5–8 lbs per dumbbell</div>
+        <div class="tip-line"><strong>Lower body:</strong> Start with 10–15 lbs (lunges, squats, deadlifts)</div>
+        <div class="tip-line"><strong>Rule:</strong> Last few reps should feel hard — if not, go heavier</div>
+        <div class="tip-line"><strong>Month 3:</strong> Increase weight by 2–5 lbs from Month 1</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast hidden" id="toast"></div>
+
+<script>
+const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+
+const PLAN = {
+  0: {
+    Monday: { title:"Full Body Cardio + Core", emoji:"🔥", color:"#FF4D6D", exercises:[
+      {name:"Jumping Jacks",count:"100 reps",type:"cardio"},
+      {name:"High Knees",count:"80 reps",type:"cardio"},
+      {name:"Mountain Climbers",count:"60 reps",type:"cardio"},
+      {name:"Crunches",count:"40 reps",type:"core"},
+      {name:"Bicycle Crunches",count:"50 reps",type:"core"},
+      {name:"Leg Raises",count:"30 reps",type:"core"},
+      {name:"Plank Hold",count:"30 sec × 3 holds",type:"core"},
+    ]},
+    Tuesday: { title:"Upper Body (Dumbbells)", emoji:"💪", color:"#845EC2", exercises:[
+      {name:"Dumbbell Bicep Curls",count:"30 reps",type:"strength"},
+      {name:"Dumbbell Shoulder Press",count:"24 reps",type:"strength"},
+      {name:"Dumbbell Lateral Raises",count:"24 reps",type:"strength"},
+      {name:"Dumbbell Bent-Over Rows",count:"30 reps",type:"strength"},
+      {name:"Dumbbell Chest Fly",count:"20 reps",type:"strength"},
+      {name:"Modified Push-Ups",count:"30 reps",type:"bodyweight"},
+      {name:"Tricep Dips (chair)",count:"30 reps",type:"bodyweight"},
+    ]},
+    Wednesday: { title:"Active Recovery", emoji:"🧘", color:"#00B4D8", exercises:[
+      {name:"Brisk Walk",count:"30 minutes",type:"cardio"},
+      {name:"Full Body Stretching",count:"15 minutes",type:"recovery"},
+      {name:"Deep Breathing / Meditation",count:"10 minutes",type:"recovery"},
+    ]},
+    Thursday: { title:"Lower Body + Glutes", emoji:"🍑", color:"#F18F01", exercises:[
+      {name:"Squats",count:"60 reps",type:"bodyweight"},
+      {name:"Dumbbell Sumo Squats",count:"40 reps",type:"strength"},
+      {name:"Dumbbell Lunges (each leg)",count:"40 reps",type:"strength"},
+      {name:"Glute Bridges",count:"50 reps",type:"bodyweight"},
+      {name:"Dumbbell Romanian Deadlift",count:"30 reps",type:"strength"},
+      {name:"Side Leg Raises (each side)",count:"40 reps",type:"bodyweight"},
+      {name:"Calf Raises",count:"80 reps",type:"bodyweight"},
+    ]},
+    Friday: { title:"Full Body HIIT", emoji:"⚡", color:"#FF4D6D", exercises:[
+      {name:"Burpees",count:"30 reps",type:"cardio"},
+      {name:"Jump Squats",count:"40 reps",type:"cardio"},
+      {name:"Push-Ups",count:"25 reps",type:"bodyweight"},
+      {name:"Mountain Climbers",count:"60 reps",type:"cardio"},
+      {name:"Jumping Jacks",count:"100 reps",type:"cardio"},
+      {name:"Plank Hold",count:"45 sec × 2 holds",type:"core"},
+    ]},
+    Saturday: { title:"Cardio + Core Blast", emoji:"🏃", color:"#06D6A0", exercises:[
+      {name:"Jump Rope / High Knees",count:"200 reps",type:"cardio"},
+      {name:"Russian Twists",count:"60 reps",type:"core"},
+      {name:"Flutter Kicks",count:"50 reps",type:"core"},
+      {name:"V-Ups",count:"30 reps",type:"core"},
+      {name:"Plank Hold",count:"60 sec hold",type:"core"},
+      {name:"Side Plank (each side)",count:"30 sec each",type:"core"},
+    ]},
+    Sunday: { title:"Rest Day 🌿", emoji:"😴", color:"#6B7280", exercises:[
+      {name:"Full Rest",count:"Let your body recover",type:"recovery"},
+      {name:"Light walk (optional)",count:"20 min if feeling good",type:"recovery"},
+      {name:"Hydrate well",count:"2–3 litres of water",type:"recovery"},
+    ]},
+  },
+  1: {
+    Monday: { title:"Full Body Cardio + Core", emoji:"🔥", color:"#FF4D6D", exercises:[
+      {name:"Jumping Jacks",count:"130 reps",type:"cardio"},
+      {name:"High Knees",count:"100 reps",type:"cardio"},
+      {name:"Mountain Climbers",count:"80 reps",type:"cardio"},
+      {name:"Crunches",count:"55 reps",type:"core"},
+      {name:"Bicycle Crunches",count:"70 reps",type:"core"},
+      {name:"Leg Raises",count:"40 reps",type:"core"},
+      {name:"Plank Hold",count:"45 sec × 3 holds",type:"core"},
+    ]},
+    Tuesday: { title:"Upper Body (Dumbbells)", emoji:"💪", color:"#845EC2", exercises:[
+      {name:"Dumbbell Bicep Curls",count:"40 reps",type:"strength"},
+      {name:"Dumbbell Shoulder Press",count:"32 reps",type:"strength"},
+      {name:"Dumbbell Lateral Raises",count:"32 reps",type:"strength"},
+      {name:"Dumbbell Bent-Over Rows",count:"40 reps",type:"strength"},
+      {name:"Dumbbell Chest Fly",count:"28 reps",type:"strength"},
+      {name:"Push-Ups (full)",count:"35 reps",type:"bodyweight"},
+      {name:"Tricep Dips (chair)",count:"40 reps",type:"bodyweight"},
+    ]},
+    Wednesday: { title:"Active Recovery", emoji:"🧘", color:"#00B4D8", exercises:[
+      {name:"Brisk Walk / Light Jog",count:"35 minutes",type:"cardio"},
+      {name:"Full Body Stretching",count:"15 minutes",type:"recovery"},
+      {name:"Deep Breathing / Meditation",count:"10 minutes",type:"recovery"},
+    ]},
+    Thursday: { title:"Lower Body + Glutes", emoji:"🍑", color:"#F18F01", exercises:[
+      {name:"Squats",count:"80 reps",type:"bodyweight"},
+      {name:"Dumbbell Sumo Squats",count:"55 reps",type:"strength"},
+      {name:"Dumbbell Lunges (each leg)",count:"55 reps",type:"strength"},
+      {name:"Glute Bridges",count:"65 reps",type:"bodyweight"},
+      {name:"Dumbbell Romanian Deadlift",count:"40 reps",type:"strength"},
+      {name:"Side Leg Raises (each side)",count:"55 reps",type:"bodyweight"},
+      {name:"Calf Raises",count:"100 reps",type:"bodyweight"},
+    ]},
+    Friday: { title:"Full Body HIIT", emoji:"⚡", color:"#FF4D6D", exercises:[
+      {name:"Burpees",count:"40 reps",type:"cardio"},
+      {name:"Jump Squats",count:"55 reps",type:"cardio"},
+      {name:"Push-Ups",count:"35 reps",type:"bodyweight"},
+      {name:"Mountain Climbers",count:"80 reps",type:"cardio"},
+      {name:"Jumping Jacks",count:"130 reps",type:"cardio"},
+      {name:"Plank Hold",count:"60 sec × 2 holds",type:"core"},
+    ]},
+    Saturday: { title:"Cardio + Core Blast", emoji:"🏃", color:"#06D6A0", exercises:[
+      {name:"Jump Rope / High Knees",count:"270 reps",type:"cardio"},
+      {name:"Russian Twists",count:"80 reps",type:"core"},
+      {name:"Flutter Kicks",count:"65 reps",type:"core"},
+      {name:"V-Ups",count:"40 reps",type:"core"},
+      {name:"Plank Hold",count:"75 sec hold",type:"core"},
+      {name:"Side Plank (each side)",count:"40 sec each",type:"core"},
+    ]},
+    Sunday: { title:"Rest Day 🌿", emoji:"😴", color:"#6B7280", exercises:[
+      {name:"Full Rest",count:"Let your body recover",type:"recovery"},
+      {name:"Light walk (optional)",count:"20 min if feeling good",type:"recovery"},
+      {name:"Hydrate well",count:"2–3 litres of water",type:"recovery"},
+    ]},
+  },
+  2: {
+    Monday: { title:"Full Body Cardio + Core", emoji:"🔥", color:"#FF4D6D", exercises:[
+      {name:"Jumping Jacks",count:"160 reps",type:"cardio"},
+      {name:"High Knees",count:"120 reps",type:"cardio"},
+      {name:"Mountain Climbers",count:"100 reps",type:"cardio"},
+      {name:"Crunches",count:"70 reps",type:"core"},
+      {name:"Bicycle Crunches",count:"90 reps",type:"core"},
+      {name:"Leg Raises",count:"50 reps",type:"core"},
+      {name:"Plank Hold",count:"60 sec × 3 holds",type:"core"},
+    ]},
+    Tuesday: { title:"Upper Body (Dumbbells)", emoji:"💪", color:"#845EC2", exercises:[
+      {name:"Dumbbell Bicep Curls",count:"50 reps",type:"strength"},
+      {name:"Dumbbell Shoulder Press",count:"40 reps",type:"strength"},
+      {name:"Dumbbell Lateral Raises",count:"40 reps",type:"strength"},
+      {name:"Dumbbell Bent-Over Rows",count:"50 reps",type:"strength"},
+      {name:"Dumbbell Chest Fly",count:"36 reps",type:"strength"},
+      {name:"Push-Ups (full)",count:"45 reps",type:"bodyweight"},
+      {name:"Tricep Dips (chair)",count:"50 reps",type:"bodyweight"},
+    ]},
+    Wednesday: { title:"Active Recovery", emoji:"🧘", color:"#00B4D8", exercises:[
+      {name:"Light Jog",count:"40 minutes",type:"cardio"},
+      {name:"Full Body Stretching",count:"15 minutes",type:"recovery"},
+      {name:"Deep Breathing / Meditation",count:"10 minutes",type:"recovery"},
+    ]},
+    Thursday: { title:"Lower Body + Glutes", emoji:"🍑", color:"#F18F01", exercises:[
+      {name:"Squats",count:"100 reps",type:"bodyweight"},
+      {name:"Dumbbell Sumo Squats",count:"70 reps",type:"strength"},
+      {name:"Dumbbell Lunges (each leg)",count:"70 reps",type:"strength"},
+      {name:"Glute Bridges",count:"80 reps",type:"bodyweight"},
+      {name:"Dumbbell Romanian Deadlift",count:"50 reps",type:"strength"},
+      {name:"Side Leg Raises (each side)",count:"70 reps",type:"bodyweight"},
+      {name:"Calf Raises",count:"120 reps",type:"bodyweight"},
+    ]},
+    Friday: { title:"Full Body HIIT", emoji:"⚡", color:"#FF4D6D", exercises:[
+      {name:"Burpees",count:"50 reps",type:"cardio"},
+      {name:"Jump Squats",count:"70 reps",type:"cardio"},
+      {name:"Push-Ups",count:"45 reps",type:"bodyweight"},
+      {name:"Mountain Climbers",count:"100 reps",type:"cardio"},
+      {name:"Jumping Jacks",count:"160 reps",type:"cardio"},
+      {name:"Plank Hold",count:"75 sec × 2 holds",type:"core"},
+    ]},
+    Saturday: { title:"Cardio + Core Blast", emoji:"🏃", color:"#06D6A0", exercises:[
+      {name:"Jump Rope / High Knees",count:"350 reps",type:"cardio"},
+      {name:"Russian Twists",count:"100 reps",type:"core"},
+      {name:"Flutter Kicks",count:"80 reps",type:"core"},
+      {name:"V-Ups",count:"50 reps",type:"core"},
+      {name:"Plank Hold",count:"90 sec hold",type:"core"},
+      {name:"Side Plank (each side)",count:"50 sec each",type:"core"},
+    ]},
+    Sunday: { title:"Rest Day 🌿", emoji:"😴", color:"#6B7280", exercises:[
+      {name:"Full Rest",count:"Let your body recover",type:"recovery"},
+      {name:"Light walk (optional)",count:"20 min if feeling good",type:"recovery"},
+      {name:"Hydrate well",count:"2–3 litres of water",type:"recovery"},
+    ]},
+  }
+};
+
+const BADGES = {
+  cardio:     {label:"Cardio",      bg:"#FF4D6D22",text:"#FF4D6D"},
+  core:       {label:"Core",        bg:"#F18F0122",text:"#F18F01"},
+  strength:   {label:"Strength",    bg:"#845EC222",text:"#845EC2"},
+  bodyweight: {label:"Bodyweight",  bg:"#06D6A022",text:"#06D6A0"},
+  recovery:   {label:"Recovery",    bg:"#00B4D822",text:"#00B4D8"},
+};
+
+let curMonth = 0;
+let curDay = "Monday";
+let curView = "plan";
+let checked = {};  // key -> bool
+let dayDone = {};  // key -> bool
+
+function sk(m,d,i){ return `wk:m${m}:d${d}:e${i}`; }
+function dk(m,d){ return `wk:m${m}:d${d}:done`; }
+
+function save(key, val) {
+  try { if(val) localStorage.setItem(key,"1"); else localStorage.removeItem(key); } catch(e){}
+}
+
+function load() {
+  try {
+    for(let m=0;m<3;m++) {
+      DAYS.forEach(d => {
+        PLAN[m][d].exercises.forEach((_,i) => {
+          if(localStorage.getItem(sk(m,d,i))) checked[sk(m,d,i)] = true;
+        });
+        if(localStorage.getItem(dk(m,d))) dayDone[dk(m,d)] = true;
+      });
+    }
+  } catch(e){}
+}
+
+function getProgress(m,d) {
+  const exs = PLAN[m][d].exercises;
+  const done = exs.filter((_,i) => checked[sk(m,d,i)]).length;
+  return {done, total:exs.length, pct: Math.round((done/exs.length)*100)};
+}
+
+function getWeekPct(m) {
+  return Math.round(DAYS.reduce((acc,d) => acc + getProgress(m,d).pct, 0) / 7);
+}
+
+function setMonth(m) {
+  curMonth = m;
+  document.querySelectorAll('.month-btn').forEach((b,i) => b.classList.toggle('active', i===m));
+  renderAll();
+}
+
+function setView(v) {
+  curView = v;
+  document.querySelectorAll('.view-tab').forEach((b,i) => b.classList.toggle('active', (i===0&&v==='plan')||(i===1&&v==='tips')));
+  document.getElementById('planView').classList.toggle('hidden', v!=='plan');
+  document.getElementById('tipsView').classList.toggle('hidden', v!=='tips');
+}
+
+function setDay(d) {
+  curDay = d;
+  renderDayPills();
+  renderWorkout();
+}
+
+function renderAll() {
+  updateWeekBar();
+  renderDayPills();
+  renderWorkout();
+}
+
+function updateWeekBar() {
+  const pct = getWeekPct(curMonth);
+  document.getElementById('weekPct').textContent = pct + '%';
+  document.getElementById('weekBar').style.width = pct + '%';
+}
+
+function renderDayPills() {
+  const container = document.getElementById('dayPills');
+  container.innerHTML = '';
+  DAYS.forEach(d => {
+    const p = getProgress(curMonth, d);
+    const isDone = !!dayDone[dk(curMonth,d)];
+    const isActive = d === curDay;
+    const div = document.createElement('div');
+    div.className = 'day-pill' + (isActive?' active':'') + (isDone?' done-pill':'');
+    div.innerHTML = `<div>${d.slice(0,3).toUpperCase()}</div><div class="sub">${isDone ? '✅' : p.done > 0 ? p.done+'/'+p.total : PLAN[curMonth][d].emoji}</div>`;
+    div.onclick = () => setDay(d);
+    container.appendChild(div);
+  });
+}
+
+function renderWorkout() {
+  const w = PLAN[curMonth][curDay];
+  const p = getProgress(curMonth, curDay);
+  const isDone = !!dayDone[dk(curMonth, curDay)];
+  const c = w.color;
+
+  let html = `
+    <div class="workout-header" style="background:linear-gradient(135deg,${c}18,#111);border:1.5px solid ${c}33;">
+      <div>
+        <div class="workout-day-label" style="color:${c}">${curDay.toUpperCase()}</div>
+        <div class="workout-title">${w.emoji} ${w.title}</div>
+      </div>
+      <div>
+        <div class="workout-pct" style="color:${c}">${p.pct}%</div>
+        <div class="workout-count">${p.done}/${p.total} done</div>
+      </div>
+    </div>
+    <div class="prog-bar-bg" style="margin-bottom:14px;">
+      <div class="prog-bar-fill" style="width:${p.pct}%;background:linear-gradient(90deg,${c},${c}88);"></div>
+    </div>
+    <div class="ex-list">
+  `;
+
+  w.exercises.forEach((ex, i) => {
+    const key = sk(curMonth, curDay, i);
+    const isChecked = !!checked[key];
+    const badge = BADGES[ex.type];
+    html += `
+      <div class="ex-row${isChecked?' checked':''}" onclick="toggleCheck(${i})">
+        <div class="checkbox${isChecked?' on':''}">${isChecked?'✓':''}</div>
+        <div style="flex:1">
+          <div class="ex-name">${ex.name}</div>
+          <div class="ex-count">${ex.count}</div>
+        </div>
+        <div class="badge" style="background:${badge.bg};color:${badge.text}">${badge.label}</div>
+      </div>
+    `;
+  });
+
+  html += `</div>`;
+
+  if(isDone) {
+    html += `<div class="complete-banner"><div class="icon">🎉</div><div class="label">Day Complete!</div><div class="sub">You showed up. That's everything.</div></div>`;
+  }
+
+  if(p.done > 0) {
+    html += `<div class="reset-row"><button class="reset-btn" onclick="resetDay()">↺ Reset Day</button></div>`;
+  }
+
+  document.getElementById('workoutArea').innerHTML = html;
+}
+
+function toggleCheck(i) {
+  const key = sk(curMonth, curDay, i);
+  checked[key] = !checked[key];
+  save(key, checked[key]);
+
+  const exs = PLAN[curMonth][curDay].exercises;
+  const allDone = exs.every((_,j) => checked[sk(curMonth,curDay,j)]);
+  if(allDone) {
+    const dKey = dk(curMonth, curDay);
+    dayDone[dKey] = true;
+    save(dKey, true);
+    showToast("🎉 Day complete! You crushed it!");
+  }
+
+  updateWeekBar();
+  renderDayPills();
+  renderWorkout();
+}
+
+function resetDay() {
+  const exs = PLAN[curMonth][curDay].exercises;
+  exs.forEach((_,i) => { const k = sk(curMonth,curDay,i); delete checked[k]; save(k,false); });
+  const dKey = dk(curMonth,curDay);
+  delete dayDone[dKey];
+  save(dKey,false);
+  updateWeekBar();
+  renderDayPills();
+  renderWorkout();
+}
+
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.add('hidden'), 2800);
+}
+
+// Init
+load();
+renderAll();
+</script>
+</body>
+</html>
