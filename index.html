@@ -2,545 +2,1418 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Fitness Journey Plan</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Linda's Journey</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!--
+=============================
+  LINDA'S FITNESS APP
+  Built by Robi via Claude
+=============================
+FIREBASE SETUP (5 min, one time):
+1. Go to https://console.firebase.google.com
+2. Create a project (name anything, disable analytics)
+3. Left menu: Build > Firestore Database > Create > Start in TEST MODE > Enable
+4. Left menu: Project Settings (gear icon) > Your apps > Add Web App > Register
+5. Copy projectId and apiKey from the config block shown
+6. Paste them in the two constants below
+7. Re-upload to GitHub Pages
+
+OPTIONAL - Lock down Firestore (recommended after setup):
+Firestore > Rules > Publish:
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} { allow read, write: if true; }
+  }
+}
+-->
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { font-size: 16px; }
-  body { background: #0D0D0D; color: white; font-family: 'DM Sans', sans-serif; min-height: 100vh; -webkit-tap-highlight-color: transparent; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-size:15px}
+body{background:#0D0D0D;color:#fff;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent;user-select:none}
+#app{height:100vh;display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative;overflow:hidden}
+#screen{flex:1;overflow-y:auto;overflow-x:hidden}
+#screen::-webkit-scrollbar{display:none}
 
-  /* HEADER */
-  .header { background: linear-gradient(135deg, #1a0810 0%, #0D0D0D 60%); border-bottom: 1px solid #1e1e1e; padding: 24px 18px 18px; }
-  .header-inner { max-width: 640px; margin: 0 auto; }
-  .header-row { display: flex; align-items: flex-start; justify-content: space-between; }
-  .logo-big { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: white; letter-spacing: 2px; line-height: 1; }
-  .logo-big span { color: #FF4D6D; }
-  .logo-sub { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: #444; letter-spacing: 3px; margin-top: 2px; }
-  .header-meta { font-size: 11px; color: #444; font-weight: 500; margin-top: 8px; }
-  .week-pct { font-family: 'Bebas Neue', sans-serif; font-size: 30px; color: #FF4D6D; text-align: right; }
-  .week-label { font-size: 10px; color: #444; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px; text-align: right; }
-  .prog-bar-bg { height: 5px; background: #1e1e1e; border-radius: 3px; overflow: hidden; margin-top: 14px; }
-  .prog-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #FF4D6D, #FF8FA3); transition: width 0.4s ease; }
+/* NAV */
+#nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#111;border-top:1px solid #1e1e1e;display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom,0px)}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 2px 8px;cursor:pointer;border:none;background:transparent;color:#3a3a3a;font-family:'DM Sans',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;gap:4px;transition:color 0.2s}
+.nb .ni{font-size:21px;line-height:1}
+.nb.on{color:#FF4D6D}
 
-  /* BODY */
-  .body { max-width: 640px; margin: 0 auto; padding: 0 16px 60px; }
+/* SETUP */
+#setup{position:fixed;inset:0;background:#0D0D0D;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 24px;overflow-y:auto}
+.setup-logo{font-family:'Bebas Neue',sans-serif;font-size:42px;color:#FF4D6D;letter-spacing:3px;text-align:center;line-height:1}
+.setup-sub{color:#555;font-size:13px;text-align:center;margin:8px 0 28px;line-height:1.6}
+.sf{width:100%;margin-bottom:14px}
+.sf label{display:block;font-size:10px;font-weight:700;color:#555;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.sf input,.sf select{width:100%;background:#111;border:1.5px solid #2a2a2a;border-radius:10px;padding:13px 14px;color:white;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;-webkit-appearance:none}
+.sf input:focus,.sf select:focus{border-color:#FF4D6D}
+.sbtn{width:100%;background:#FF4D6D;color:white;border:none;border-radius:12px;padding:16px;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:700;cursor:pointer;margin-top:6px}
+.setup-note{font-size:11px;color:#333;text-align:center;margin-top:14px;line-height:1.7}
 
-  /* MONTH TABS */
-  .month-row { display: flex; gap: 8px; padding: 18px 0 6px; flex-wrap: wrap; }
-  .month-btn { background: transparent; border: 1px solid #2a2a2a; color: #666; padding: 8px 14px; border-radius: 50px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; transition: all 0.2s; }
-  .month-btn.active { background: #FF4D6D; border-color: #FF4D6D; color: white; }
+/* SHARED */
+.shead{padding:44px 18px 14px;position:sticky;top:0;background:#0D0D0D;border-bottom:1px solid #1e1e1e;z-index:10}
+.shead-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px}
+.shead-sub{font-size:12px;color:#444;margin-top:2px;font-weight:500}
+.sec{padding:16px}
+.slabel{font-size:10px;font-weight:700;color:#444;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px}
+.card{background:#111;border:1.5px solid #1e1e1e;border-radius:14px;padding:16px;margin-bottom:10px}
+.pbtn{width:100%;border:none;border-radius:12px;padding:15px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s}
+.pbtn.primary{background:#FF4D6D;color:#fff}
+.pbtn.done{background:#111;color:#06D6A0;border:1.5px solid #06D6A044}
+.pbtn.ghost{background:transparent;border:1.5px solid #2a2a2a;color:#555}
+.divider{height:1px;background:#1a1a1a;margin:0 16px}
+input[type=number]{-moz-appearance:textfield}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none}
 
-  /* VIEW TABS */
-  .view-tabs { display: flex; border-bottom: 1px solid #1e1e1e; margin-bottom: 18px; margin-top: 4px; }
-  .view-tab { background: transparent; border: none; border-bottom: 2px solid transparent; color: #444; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; padding: 10px 16px; transition: all 0.2s; margin-bottom: -1px; }
-  .view-tab.active { color: #FF4D6D; border-bottom-color: #FF4D6D; }
+/* HOME */
+.hdr{background:linear-gradient(135deg,#1a0810 0%,#0D0D0D 65%);padding:48px 18px 18px;border-bottom:1px solid #1e1e1e}
+.hdr-greet{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:1px;line-height:1}
+.hdr-greet span{color:#FF4D6D}
+.hdr-date{font-size:11px;color:#444;margin-top:3px;font-weight:500}
+.streak-pill{display:inline-flex;align-items:center;gap:6px;background:#FF4D6D15;border:1px solid #FF4D6D33;border-radius:20px;padding:5px 12px;margin-top:10px;font-size:12px;font-weight:700;color:#FF4D6D}
+.stats3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:14px 16px}
+.sbox{background:#111;border:1.5px solid #1e1e1e;border-radius:12px;padding:12px 10px;text-align:center}
+.sbox-icon{font-size:16px;margin-bottom:3px}
+.sbox-val{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;line-height:1}
+.sbox-lbl{font-size:9px;color:#444;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-top:3px}
+.hbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:4px 16px 90px}
+.hbtn{background:#111;border:1.5px solid #1e1e1e;border-radius:14px;padding:20px 14px;cursor:pointer;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;transition:all 0.15s;border:none;width:100%}
+.hbtn:active{transform:scale(0.97)}
+.hbtn .bi{font-size:28px}
+.hbtn .bl{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:1px}
+.hbtn .bs{font-size:10px;color:#444;font-weight:500}
+.hbtn.food{background:#111;border:1.5px solid #F18F0120}.hbtn.food .bl{color:#F18F01}
+.hbtn.walk{background:#111;border:1.5px solid #06D6A020}.hbtn.walk .bl{color:#06D6A0}
+.hbtn.workout{background:#111;border:1.5px solid #FF4D6D20}.hbtn.workout .bl{color:#FF4D6D}
+.hbtn.analytics{background:#111;border:1.5px solid #845EC220}.hbtn.analytics .bl{color:#845EC2}
+.hbtn.history{background:#111;border:1.5px solid #00B4D820}.hbtn.history .bl{color:#00B4D8}
+.wide{grid-column:span 2}
 
-  /* DAY PILLS */
-  .day-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 14px; scrollbar-width: none; }
-  .day-scroll::-webkit-scrollbar { display: none; }
-  .day-pill { flex-shrink: 0; background: #1a1a1a; border: 1.5px solid #2a2a2a; border-radius: 14px; padding: 10px 14px; cursor: pointer; font-size: 11px; font-weight: 700; color: #555; text-align: center; min-width: 70px; transition: all 0.2s; }
-  .day-pill.active { background: #1e1014; border-color: #FF4D6D; color: #FF4D6D; }
-  .day-pill.done-pill { border-color: #06D6A055; }
-  .day-pill .sub { font-size: 13px; margin-top: 4px; }
+/* FOOD */
+.meal-type{font-size:10px;font-weight:700;color:#555;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.meal-name{font-size:15px;font-weight:700;color:#e0e0e0}
+.meal-desc{font-size:12px;color:#555;margin-top:4px;line-height:1.5}
+.meal-meta{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.mbadge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px}
+.mcal{background:#FF4D6D15;color:#FF4D6D}
+.mpro{background:#06D6A015;color:#06D6A0}
+.water-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.wg{width:34px;height:34px;background:#1a1a1a;border:1.5px solid #2a2a2a;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;transition:all 0.15s}
+.wg.full{background:#00B4D815;border-color:#00B4D844}
+.cheat-card{background:linear-gradient(135deg,#F18F0112,#111);border:1.5px solid #F18F0130;border-radius:14px;padding:18px;text-align:center;margin-bottom:10px}
+.cheat-title{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#F18F01;letter-spacing:1px}
+.cheat-sub{font-size:12px;color:#666;margin-top:6px;line-height:1.6}
 
-  /* WORKOUT CARD */
-  .workout-header { border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
-  .workout-day-label { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 1px; }
-  .workout-title { font-size: 13px; color: #ccc; font-weight: 500; margin-top: 2px; }
-  .workout-pct { font-family: 'Bebas Neue', sans-serif; font-size: 26px; text-align: right; }
-  .workout-count { font-size: 11px; color: #555; margin-top: 2px; text-align: right; }
+/* WALK */
+.walk-hero{background:linear-gradient(135deg,#06D6A015,#111);border:1.5px solid #06D6A030;border-radius:16px;padding:24px;margin:16px;text-align:center}
+.walk-steps{font-family:'Bebas Neue',sans-serif;font-size:52px;color:#06D6A0;letter-spacing:2px;line-height:1}
+.walk-sub{font-size:12px;color:#555;margin-top:4px}
+.week-bars{display:flex;gap:4px;align-items:flex-end;height:48px;margin-top:12px}
+.wbar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.wbar{width:100%;background:#1a1a1a;border-radius:3px 3px 0 0;transition:height 0.4s ease}
+.wbar-day{font-size:9px;color:#333;font-weight:700}
+.numinput{width:100%;background:#1a1a1a;border:1.5px solid #2a2a2a;border-radius:10px;padding:14px;color:white;font-family:'DM Sans',sans-serif;font-size:22px;font-weight:700;outline:none;text-align:center;margin-top:8px;transition:border-color 0.2s}
+.numinput:focus{border-color:#06D6A0}
+.deficit-box{background:#06D6A012;border:1.5px solid #06D6A040;border-radius:14px;padding:20px;text-align:center;margin:0 16px 16px}
+.deficit-box.neg{background:#FF4D6D10;border-color:#FF4D6D33}
+.deficit-num{font-family:'Bebas Neue',sans-serif;font-size:50px;color:#06D6A0;letter-spacing:2px;line-height:1}
+.deficit-num.neg{color:#FF4D6D}
+.deficit-lbl{font-size:12px;color:#444;margin-top:4px}
+.deficit-hype{font-size:13px;font-weight:700;color:#06D6A0;margin-top:10px;line-height:1.5}
+.deficit-hype.neg{color:#888}
 
-  /* EXERCISES */
-  .ex-list { display: flex; flex-direction: column; gap: 8px; }
-  .ex-row { display: flex; align-items: center; gap: 12px; padding: 13px 16px; background: #111; border-radius: 12px; border: 1.5px solid #1e1e1e; cursor: pointer; transition: all 0.15s; }
-  .ex-row.checked { opacity: 0.5; }
-  .ex-row:active { transform: scale(0.99); }
-  .checkbox { width: 22px; height: 22px; border-radius: 6px; border: 2px solid #333; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all 0.2s; }
-  .checkbox.on { background: #FF4D6D; border-color: #FF4D6D; }
-  .ex-name { font-size: 14px; font-weight: 600; color: #e0e0e0; transition: all 0.2s; }
-  .ex-row.checked .ex-name { text-decoration: line-through; color: #555; }
-  .ex-count { font-size: 13px; font-weight: 700; color: #FF4D6D; margin-top: 2px; transition: all 0.2s; }
-  .ex-row.checked .ex-count { color: #444; }
-  .badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; letter-spacing: 0.5px; white-space: nowrap; flex-shrink: 0; }
+/* WORKOUT */
+.phase-tag{display:inline-flex;align-items:center;gap:5px;background:#FF4D6D15;border:1px solid #FF4D6D33;border-radius:20px;padding:5px 12px;margin:14px 16px 0;font-size:11px;font-weight:700;color:#FF4D6D}
+.wo-card{background:#111;border:1.5px solid #1e1e1e;border-radius:14px;margin:10px 16px;overflow:hidden}
+.wo-header{padding:14px 16px;background:linear-gradient(135deg,#FF4D6D15,transparent);border-bottom:1px solid #1a1a1a;display:flex;justify-content:space-between;align-items:center}
+.wo-title{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#FF4D6D;letter-spacing:1px}
+.wo-meta{font-size:11px;color:#555;margin-top:2px}
+.wo-pct{font-family:'Bebas Neue',sans-serif;font-size:26px;color:#FF4D6D}
+.ex-row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid #161616;cursor:pointer;transition:background 0.1s}
+.ex-row:last-child{border-bottom:none}
+.ex-row:active{background:#161616}
+.ex-cb{width:22px;height:22px;border-radius:6px;border:2px solid #2a2a2a;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all 0.2s}
+.ex-cb.on{background:#FF4D6D;border-color:#FF4D6D}
+.ex-name{font-size:13px;font-weight:600;color:#e0e0e0;line-height:1.3}
+.ex-count{font-size:12px;color:#FF4D6D;font-weight:700;margin-top:2px}
+.ex-row.done .ex-name{text-decoration:line-through;color:#444}
+.ex-row.done .ex-count{color:#333}
+.ex-yt{width:30px;height:30px;background:#FF000015;border:1.5px solid #FF000030;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;text-decoration:none;cursor:pointer}
+.rest-card{background:#111;border:1.5px solid #1e1e1e;border-radius:14px;margin:10px 16px;padding:28px;text-align:center}
+.rest-icon{font-size:36px;margin-bottom:10px}
+.rest-title{font-family:'Bebas Neue',sans-serif;font-size:24px;color:#333;letter-spacing:1px}
+.rest-sub{font-size:12px;color:#333;margin-top:8px;line-height:1.7}
 
-  /* COMPLETE BANNER */
-  .complete-banner { background: #06D6A011; border: 1.5px solid #06D6A044; border-radius: 12px; padding: 14px 18px; margin-top: 14px; text-align: center; }
-  .complete-banner .icon { font-size: 22px; }
-  .complete-banner .label { color: #06D6A0; font-weight: 700; font-size: 15px; margin-top: 4px; }
-  .complete-banner .sub { color: #555; font-size: 12px; margin-top: 4px; }
+/* ANALYTICS */
+.ag{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px}
+.acard{background:#111;border:1.5px solid #1e1e1e;border-radius:14px;padding:16px}
+.acard.wide{grid-column:span 2}
+.anum{font-family:'Bebas Neue',sans-serif;font-size:38px;line-height:1}
+.albl{font-size:10px;font-weight:700;color:#444;letter-spacing:0.5px;text-transform:uppercase;margin-top:4px}
+.asub{font-size:11px;color:#333;margin-top:4px}
+.mini-bars{display:flex;align-items:flex-end;gap:3px;height:44px;margin-top:12px}
+.mbar{flex:1;border-radius:2px 2px 0 0;min-height:2px;transition:height 0.3s}
+.weighin-card{background:linear-gradient(135deg,#845EC215,#111);border:1.5px solid #845EC233;border-radius:14px;padding:18px;margin:0 16px 16px}
+.wi-title{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#845EC2;letter-spacing:1px}
+.wi-sub{font-size:12px;color:#555;margin-top:6px;line-height:1.6}
+.wi-inp{width:100%;background:#1a1a1a;border:1.5px solid #845EC233;border-radius:10px;padding:12px;color:white;font-family:'DM Sans',sans-serif;font-size:20px;font-weight:700;outline:none;text-align:center;margin-top:10px}
+.wi-inp:focus{border-color:#845EC2}
+.wi-btn{width:100%;background:#845EC2;color:white;border:none;border-radius:10px;padding:13px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px}
+.ach-grid{display:flex;gap:8px;flex-wrap:wrap;padding:0 16px 16px}
+.ach-badge{background:#1a1a1a;border:1.5px solid #2a2a2a;border-radius:10px;padding:8px 10px;font-size:10px;font-weight:700;color:#555;display:flex;align-items:center;gap:5px}
+.ach-badge.unlocked{border-color:#FF4D6D33;color:#FF4D6D;background:#FF4D6D10}
 
-  .reset-row { text-align: right; margin-top: 12px; }
-  .reset-btn { background: transparent; border: 1px solid #2a2a2a; color: #555; font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 6px 14px; border-radius: 8px; cursor: pointer; }
+/* HISTORY */
+.hday{background:#111;border:1.5px solid #1e1e1e;border-radius:12px;padding:14px;margin:0 16px 10px}
+.hday-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.hday-date{font-size:13px;font-weight:700;color:#ccc}
+.hday-score{font-family:'Bebas Neue',sans-serif;font-size:18px}
+.hm-row{display:flex;gap:6px;flex-wrap:wrap}
+.hm{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px}
+.hm.s{background:#06D6A015;color:#06D6A0}
+.hm.f{background:#F18F0115;color:#F18F01}
+.hm.w{background:#00B4D815;color:#00B4D8}
+.hm.wk{background:#FF4D6D15;color:#FF4D6D}
+.hm.d{background:#845EC215;color:#845EC2}
 
-  /* TIPS */
-  .tip-card { background: #111; border: 1.5px solid #1e1e1e; border-radius: 14px; padding: 18px 18px; margin-bottom: 12px; }
-  .tip-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; margin-bottom: 10px; }
-  .tip-body { font-size: 13px; color: #999; line-height: 1.8; }
-  .tip-body strong { color: #e0e0e0; }
-  .tip-line { margin-top: 5px; }
+/* ACHIEVEMENT OVERLAY */
+#achOverlay{position:fixed;inset:0;background:#000c;z-index:300;display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn 0.3s ease}
+#achOverlay.hidden{display:none}
+.ach-popup{background:#111;border:2px solid #FF4D6D33;border-radius:20px;padding:32px 24px;text-align:center;max-width:320px;width:100%}
+.ach-pop-icon{font-size:52px;margin-bottom:10px}
+.ach-pop-title{font-family:'Bebas Neue',sans-serif;font-size:26px;color:#FF4D6D;letter-spacing:1px;margin-bottom:10px}
+.ach-pop-msg{font-size:14px;color:#bbb;line-height:1.75;font-style:italic}
+.ach-pop-close{background:#FF4D6D;color:white;border:none;border-radius:12px;padding:14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:18px;width:100%}
 
-  /* TOAST */
-  .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: #1a1a1a; border: 1.5px solid #FF4D6D55; color: white; padding: 12px 22px; border-radius: 50px; font-size: 13px; font-weight: 500; z-index: 999; white-space: nowrap; animation: fadeIn 0.3s ease; pointer-events: none; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+/* TOAST */
+#toast{position:fixed;bottom:85px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1.5px solid #333;color:white;padding:9px 18px;border-radius:30px;font-size:12px;font-weight:600;z-index:250;white-space:nowrap;pointer-events:none;animation:slideUp 0.3s ease}
+#toast.hidden{display:none}
 
-  .hidden { display: none !important; }
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.pb{padding-bottom:90px}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<div class="header">
-  <div class="header-inner">
-    <div class="header-row">
-      <div>
-        <div class="logo-big">YOUR FIT<span>NESS</span></div>
-        <div class="logo-sub">JOURNEY PLAN</div>
-        <div class="header-meta">29 yrs · 167 lbs · Goal: Stronger + Leaner</div>
-      </div>
-      <div>
-        <div class="week-label">Week Progress</div>
-        <div class="week-pct" id="weekPct">0%</div>
-      </div>
-    </div>
-    <div class="prog-bar-bg">
-      <div class="prog-bar-fill" id="weekBar" style="width:0%"></div>
-    </div>
-  </div>
+<!-- SETUP SCREEN -->
+<div id="setup" class="hidden">
+  <div class="setup-logo">LINDA'S<br>JOURNEY</div>
+  <p class="setup-sub">One-time setup. Enter your Firebase details<br>to keep data forever, on any device.</p>
+  <div class="sf"><label>Firebase Project ID</label><input id="fbPid" type="text" placeholder="e.g. linda-fitness-app" autocapitalize="none"></div>
+  <div class="sf"><label>Firebase API Key</label><input id="fbKey" type="text" placeholder="AIzaSy..." autocapitalize="none"></div>
+  <button class="sbtn" onclick="completeSetup()">Start the Journey</button>
+  <p class="setup-note">Don't have Firebase yet? See the setup guide<br>in the HTML file comments. Takes 5 minutes.<br><br>Or tap below to use this device only (no sync).</p>
+  <button class="pbtn ghost" style="margin-top:10px" onclick="skipSetup()">Use this device only</button>
 </div>
 
-<!-- BODY -->
-<div class="body">
-
-  <!-- MONTH BUTTONS -->
-  <div class="month-row">
-    <button class="month-btn active" onclick="setMonth(0)">Month 1 · Foundation</button>
-    <button class="month-btn" onclick="setMonth(1)">Month 2 · Build</button>
-    <button class="month-btn" onclick="setMonth(2)">Month 3 · Intensity</button>
+<!-- ACHIEVEMENT OVERLAY -->
+<div id="achOverlay" class="hidden">
+  <div class="ach-popup">
+    <div class="ach-pop-icon" id="achIcon"></div>
+    <div class="ach-pop-title" id="achTitle"></div>
+    <div class="ach-pop-msg" id="achMsg"></div>
+    <button class="ach-pop-close" onclick="closeAch()">Thank you</button>
   </div>
-
-  <!-- VIEW TABS -->
-  <div class="view-tabs">
-    <button class="view-tab active" onclick="setView('plan')">Workout Plan</button>
-    <button class="view-tab" onclick="setView('tips')">Nutrition & Tips</button>
-  </div>
-
-  <!-- PLAN VIEW -->
-  <div id="planView">
-
-    <!-- DAY PILLS -->
-    <div class="day-scroll" id="dayPills"></div>
-
-    <!-- WORKOUT AREA -->
-    <div id="workoutArea"></div>
-
-  </div>
-
-  <!-- TIPS VIEW -->
-  <div id="tipsView" class="hidden">
-    <div class="tip-card">
-      <div class="tip-title" style="color:#FF4D6D">🎯 WEIGHT LOSS REALITY</div>
-      <div class="tip-body">
-        Losing <strong>5–10 lbs/month</strong> is achievable but requires both <strong>exercise + caloric deficit</strong>. 1 lb of fat = ~3,500 calories burned or cut. This plan handles the burn side — aim to also cut <strong>500–700 cal/day from food</strong> for the best results.
-      </div>
-    </div>
-    <div class="tip-card">
-      <div class="tip-title" style="color:#F18F01">🥗 NUTRITION BASICS</div>
-      <div class="tip-body">
-        <div class="tip-line">✅ <strong>Eat more protein</strong> — chicken, eggs, fish, beans (~120g/day)</div>
-        <div class="tip-line">✅ <strong>Cut liquid calories</strong> — sodas, juice, alcohol are the biggest saboteurs</div>
-        <div class="tip-line">✅ <strong>Eat whole foods</strong> — veggies, rice, oats, healthy fats</div>
-        <div class="tip-line">✅ <strong>Don't skip meals</strong> — 3 meals + 1–2 light snacks</div>
-        <div class="tip-line">✅ <strong>Calorie target:</strong> ~1,500–1,700 cal/day for your stats</div>
-      </div>
-    </div>
-    <div class="tip-card">
-      <div class="tip-title" style="color:#06D6A0">💧 HYDRATION</div>
-      <div class="tip-body">Drink <strong>2.5–3 litres of water daily</strong>. Start every morning with a big glass before coffee. Water suppresses appetite, boosts metabolism, and speeds recovery.</div>
-    </div>
-    <div class="tip-card">
-      <div class="tip-title" style="color:#845EC2">😴 SLEEP & RECOVERY</div>
-      <div class="tip-body">Aim for <strong>7–9 hours of sleep</strong>. Poor sleep raises cortisol (the stress hormone) which stores belly fat. Treat sleep as seriously as workouts.</div>
-    </div>
-    <div class="tip-card">
-      <div class="tip-title" style="color:#00B4D8">📈 MONTHLY PROGRESSION</div>
-      <div class="tip-body">
-        <div class="tip-line"><strong style="color:#FF4D6D">Month 1 (Foundation):</strong> Learn movements. Focus on form. Build the habit.</div>
-        <div class="tip-line"><strong style="color:#F18F01">Month 2 (Build):</strong> Numbers increase ~30%. You'll feel noticeably stronger.</div>
-        <div class="tip-line"><strong style="color:#06D6A0">Month 3 (Intensity):</strong> Full output — this is where the transformation shows.</div>
-      </div>
-    </div>
-    <div class="tip-card">
-      <div class="tip-title" style="color:#FF4D6D">⚖️ DUMBBELL GUIDE</div>
-      <div class="tip-body">
-        <div class="tip-line"><strong>Upper body:</strong> Start with 5–8 lbs per dumbbell</div>
-        <div class="tip-line"><strong>Lower body:</strong> Start with 10–15 lbs (lunges, squats, deadlifts)</div>
-        <div class="tip-line"><strong>Rule:</strong> Last few reps should feel hard — if not, go heavier</div>
-        <div class="tip-line"><strong>Month 3:</strong> Increase weight by 2–5 lbs from Month 1</div>
-      </div>
-    </div>
-  </div>
-
 </div>
 
 <!-- TOAST -->
-<div class="toast hidden" id="toast"></div>
+<div id="toast" class="hidden"></div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div id="screen"></div>
+  <nav id="nav">
+    <button class="nb on" onclick="go('home')" id="nb-home"><span class="ni">🏠</span>Home</button>
+    <button class="nb" onclick="go('food')" id="nb-food"><span class="ni">🍽️</span>Food</button>
+    <button class="nb" onclick="go('walk')" id="nb-walk"><span class="ni">👟</span>Walk</button>
+    <button class="nb" onclick="go('workout')" id="nb-workout"><span class="ni">💪</span>Workout</button>
+    <button class="nb" onclick="go('analytics')" id="nb-analytics"><span class="ni">📊</span>Stats</button>
+    <button class="nb" onclick="go('history')" id="nb-history"><span class="ni">📅</span>History</button>
+  </nav>
+</div>
 
 <script>
-const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+'use strict';
 
-const PLAN = {
-  0: {
-    Monday: { title:"Full Body Cardio + Core", emoji:"🔥", color:"#FF4D6D", exercises:[
-      {name:"Jumping Jacks",count:"100 reps",type:"cardio"},
-      {name:"High Knees",count:"80 reps",type:"cardio"},
-      {name:"Mountain Climbers",count:"60 reps",type:"cardio"},
-      {name:"Crunches",count:"40 reps",type:"core"},
-      {name:"Bicycle Crunches",count:"50 reps",type:"core"},
-      {name:"Leg Raises",count:"30 reps",type:"core"},
-      {name:"Plank Hold",count:"30 sec × 3 holds",type:"core"},
-    ]},
-    Tuesday: { title:"Upper Body (Dumbbells)", emoji:"💪", color:"#845EC2", exercises:[
-      {name:"Dumbbell Bicep Curls",count:"30 reps",type:"strength"},
-      {name:"Dumbbell Shoulder Press",count:"24 reps",type:"strength"},
-      {name:"Dumbbell Lateral Raises",count:"24 reps",type:"strength"},
-      {name:"Dumbbell Bent-Over Rows",count:"30 reps",type:"strength"},
-      {name:"Dumbbell Chest Fly",count:"20 reps",type:"strength"},
-      {name:"Modified Push-Ups",count:"30 reps",type:"bodyweight"},
-      {name:"Tricep Dips (chair)",count:"30 reps",type:"bodyweight"},
-    ]},
-    Wednesday: { title:"Active Recovery", emoji:"🧘", color:"#00B4D8", exercises:[
-      {name:"Brisk Walk",count:"30 minutes",type:"cardio"},
-      {name:"Full Body Stretching",count:"15 minutes",type:"recovery"},
-      {name:"Deep Breathing / Meditation",count:"10 minutes",type:"recovery"},
-    ]},
-    Thursday: { title:"Lower Body + Glutes", emoji:"🍑", color:"#F18F01", exercises:[
-      {name:"Squats",count:"60 reps",type:"bodyweight"},
-      {name:"Dumbbell Sumo Squats",count:"40 reps",type:"strength"},
-      {name:"Dumbbell Lunges (each leg)",count:"40 reps",type:"strength"},
-      {name:"Glute Bridges",count:"50 reps",type:"bodyweight"},
-      {name:"Dumbbell Romanian Deadlift",count:"30 reps",type:"strength"},
-      {name:"Side Leg Raises (each side)",count:"40 reps",type:"bodyweight"},
-      {name:"Calf Raises",count:"80 reps",type:"bodyweight"},
-    ]},
-    Friday: { title:"Full Body HIIT", emoji:"⚡", color:"#FF4D6D", exercises:[
-      {name:"Burpees",count:"30 reps",type:"cardio"},
-      {name:"Jump Squats",count:"40 reps",type:"cardio"},
-      {name:"Push-Ups",count:"25 reps",type:"bodyweight"},
-      {name:"Mountain Climbers",count:"60 reps",type:"cardio"},
-      {name:"Jumping Jacks",count:"100 reps",type:"cardio"},
-      {name:"Plank Hold",count:"45 sec × 2 holds",type:"core"},
-    ]},
-    Saturday: { title:"Cardio + Core Blast", emoji:"🏃", color:"#06D6A0", exercises:[
-      {name:"Jump Rope / High Knees",count:"200 reps",type:"cardio"},
-      {name:"Russian Twists",count:"60 reps",type:"core"},
-      {name:"Flutter Kicks",count:"50 reps",type:"core"},
-      {name:"V-Ups",count:"30 reps",type:"core"},
-      {name:"Plank Hold",count:"60 sec hold",type:"core"},
-      {name:"Side Plank (each side)",count:"30 sec each",type:"core"},
-    ]},
-    Sunday: { title:"Rest Day 🌿", emoji:"😴", color:"#6B7280", exercises:[
-      {name:"Full Rest",count:"Let your body recover",type:"recovery"},
-      {name:"Light walk (optional)",count:"20 min if feeling good",type:"recovery"},
-      {name:"Hydrate well",count:"2–3 litres of water",type:"recovery"},
-    ]},
-  },
-  1: {
-    Monday: { title:"Full Body Cardio + Core", emoji:"🔥", color:"#FF4D6D", exercises:[
-      {name:"Jumping Jacks",count:"130 reps",type:"cardio"},
-      {name:"High Knees",count:"100 reps",type:"cardio"},
-      {name:"Mountain Climbers",count:"80 reps",type:"cardio"},
-      {name:"Crunches",count:"55 reps",type:"core"},
-      {name:"Bicycle Crunches",count:"70 reps",type:"core"},
-      {name:"Leg Raises",count:"40 reps",type:"core"},
-      {name:"Plank Hold",count:"45 sec × 3 holds",type:"core"},
-    ]},
-    Tuesday: { title:"Upper Body (Dumbbells)", emoji:"💪", color:"#845EC2", exercises:[
-      {name:"Dumbbell Bicep Curls",count:"40 reps",type:"strength"},
-      {name:"Dumbbell Shoulder Press",count:"32 reps",type:"strength"},
-      {name:"Dumbbell Lateral Raises",count:"32 reps",type:"strength"},
-      {name:"Dumbbell Bent-Over Rows",count:"40 reps",type:"strength"},
-      {name:"Dumbbell Chest Fly",count:"28 reps",type:"strength"},
-      {name:"Push-Ups (full)",count:"35 reps",type:"bodyweight"},
-      {name:"Tricep Dips (chair)",count:"40 reps",type:"bodyweight"},
-    ]},
-    Wednesday: { title:"Active Recovery", emoji:"🧘", color:"#00B4D8", exercises:[
-      {name:"Brisk Walk / Light Jog",count:"35 minutes",type:"cardio"},
-      {name:"Full Body Stretching",count:"15 minutes",type:"recovery"},
-      {name:"Deep Breathing / Meditation",count:"10 minutes",type:"recovery"},
-    ]},
-    Thursday: { title:"Lower Body + Glutes", emoji:"🍑", color:"#F18F01", exercises:[
-      {name:"Squats",count:"80 reps",type:"bodyweight"},
-      {name:"Dumbbell Sumo Squats",count:"55 reps",type:"strength"},
-      {name:"Dumbbell Lunges (each leg)",count:"55 reps",type:"strength"},
-      {name:"Glute Bridges",count:"65 reps",type:"bodyweight"},
-      {name:"Dumbbell Romanian Deadlift",count:"40 reps",type:"strength"},
-      {name:"Side Leg Raises (each side)",count:"55 reps",type:"bodyweight"},
-      {name:"Calf Raises",count:"100 reps",type:"bodyweight"},
-    ]},
-    Friday: { title:"Full Body HIIT", emoji:"⚡", color:"#FF4D6D", exercises:[
-      {name:"Burpees",count:"40 reps",type:"cardio"},
-      {name:"Jump Squats",count:"55 reps",type:"cardio"},
-      {name:"Push-Ups",count:"35 reps",type:"bodyweight"},
-      {name:"Mountain Climbers",count:"80 reps",type:"cardio"},
-      {name:"Jumping Jacks",count:"130 reps",type:"cardio"},
-      {name:"Plank Hold",count:"60 sec × 2 holds",type:"core"},
-    ]},
-    Saturday: { title:"Cardio + Core Blast", emoji:"🏃", color:"#06D6A0", exercises:[
-      {name:"Jump Rope / High Knees",count:"270 reps",type:"cardio"},
-      {name:"Russian Twists",count:"80 reps",type:"core"},
-      {name:"Flutter Kicks",count:"65 reps",type:"core"},
-      {name:"V-Ups",count:"40 reps",type:"core"},
-      {name:"Plank Hold",count:"75 sec hold",type:"core"},
-      {name:"Side Plank (each side)",count:"40 sec each",type:"core"},
-    ]},
-    Sunday: { title:"Rest Day 🌿", emoji:"😴", color:"#6B7280", exercises:[
-      {name:"Full Rest",count:"Let your body recover",type:"recovery"},
-      {name:"Light walk (optional)",count:"20 min if feeling good",type:"recovery"},
-      {name:"Hydrate well",count:"2–3 litres of water",type:"recovery"},
-    ]},
-  },
-  2: {
-    Monday: { title:"Full Body Cardio + Core", emoji:"🔥", color:"#FF4D6D", exercises:[
-      {name:"Jumping Jacks",count:"160 reps",type:"cardio"},
-      {name:"High Knees",count:"120 reps",type:"cardio"},
-      {name:"Mountain Climbers",count:"100 reps",type:"cardio"},
-      {name:"Crunches",count:"70 reps",type:"core"},
-      {name:"Bicycle Crunches",count:"90 reps",type:"core"},
-      {name:"Leg Raises",count:"50 reps",type:"core"},
-      {name:"Plank Hold",count:"60 sec × 3 holds",type:"core"},
-    ]},
-    Tuesday: { title:"Upper Body (Dumbbells)", emoji:"💪", color:"#845EC2", exercises:[
-      {name:"Dumbbell Bicep Curls",count:"50 reps",type:"strength"},
-      {name:"Dumbbell Shoulder Press",count:"40 reps",type:"strength"},
-      {name:"Dumbbell Lateral Raises",count:"40 reps",type:"strength"},
-      {name:"Dumbbell Bent-Over Rows",count:"50 reps",type:"strength"},
-      {name:"Dumbbell Chest Fly",count:"36 reps",type:"strength"},
-      {name:"Push-Ups (full)",count:"45 reps",type:"bodyweight"},
-      {name:"Tricep Dips (chair)",count:"50 reps",type:"bodyweight"},
-    ]},
-    Wednesday: { title:"Active Recovery", emoji:"🧘", color:"#00B4D8", exercises:[
-      {name:"Light Jog",count:"40 minutes",type:"cardio"},
-      {name:"Full Body Stretching",count:"15 minutes",type:"recovery"},
-      {name:"Deep Breathing / Meditation",count:"10 minutes",type:"recovery"},
-    ]},
-    Thursday: { title:"Lower Body + Glutes", emoji:"🍑", color:"#F18F01", exercises:[
-      {name:"Squats",count:"100 reps",type:"bodyweight"},
-      {name:"Dumbbell Sumo Squats",count:"70 reps",type:"strength"},
-      {name:"Dumbbell Lunges (each leg)",count:"70 reps",type:"strength"},
-      {name:"Glute Bridges",count:"80 reps",type:"bodyweight"},
-      {name:"Dumbbell Romanian Deadlift",count:"50 reps",type:"strength"},
-      {name:"Side Leg Raises (each side)",count:"70 reps",type:"bodyweight"},
-      {name:"Calf Raises",count:"120 reps",type:"bodyweight"},
-    ]},
-    Friday: { title:"Full Body HIIT", emoji:"⚡", color:"#FF4D6D", exercises:[
-      {name:"Burpees",count:"50 reps",type:"cardio"},
-      {name:"Jump Squats",count:"70 reps",type:"cardio"},
-      {name:"Push-Ups",count:"45 reps",type:"bodyweight"},
-      {name:"Mountain Climbers",count:"100 reps",type:"cardio"},
-      {name:"Jumping Jacks",count:"160 reps",type:"cardio"},
-      {name:"Plank Hold",count:"75 sec × 2 holds",type:"core"},
-    ]},
-    Saturday: { title:"Cardio + Core Blast", emoji:"🏃", color:"#06D6A0", exercises:[
-      {name:"Jump Rope / High Knees",count:"350 reps",type:"cardio"},
-      {name:"Russian Twists",count:"100 reps",type:"core"},
-      {name:"Flutter Kicks",count:"80 reps",type:"core"},
-      {name:"V-Ups",count:"50 reps",type:"core"},
-      {name:"Plank Hold",count:"90 sec hold",type:"core"},
-      {name:"Side Plank (each side)",count:"50 sec each",type:"core"},
-    ]},
-    Sunday: { title:"Rest Day 🌿", emoji:"😴", color:"#6B7280", exercises:[
-      {name:"Full Rest",count:"Let your body recover",type:"recovery"},
-      {name:"Light walk (optional)",count:"20 min if feeling good",type:"recovery"},
-      {name:"Hydrate well",count:"2–3 litres of water",type:"recovery"},
-    ]},
+// =============================================
+//  CONFIG  -- Robi: edit these two lines
+// =============================================
+const FB_PROJECT_ID = 'linda-fitness';
+const FB_API_KEY    = 'AIzaSyAyNymBoQTXRmGOgrIjHgZbIibLBLFDoZg';
+// =============================================
+
+const FB_ON = FB_PROJECT_ID !== 'YOUR_PROJECT_ID' && FB_API_KEY !== 'YOUR_API_KEY';
+const FB_BASE = `https://firestore.googleapis.com/v1/projects/${FB_PROJECT_ID}/databases/(default)/documents`;
+
+// ---------- FIREBASE REST ----------
+function fsFields(obj) {
+  const f = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === null || v === undefined) continue;
+    if (typeof v === 'boolean') f[k] = {booleanValue: v};
+    else if (typeof v === 'number') f[k] = {doubleValue: v};
+    else f[k] = {stringValue: String(v)};
   }
-};
-
-const BADGES = {
-  cardio:     {label:"Cardio",      bg:"#FF4D6D22",text:"#FF4D6D"},
-  core:       {label:"Core",        bg:"#F18F0122",text:"#F18F01"},
-  strength:   {label:"Strength",    bg:"#845EC222",text:"#845EC2"},
-  bodyweight: {label:"Bodyweight",  bg:"#06D6A022",text:"#06D6A0"},
-  recovery:   {label:"Recovery",    bg:"#00B4D822",text:"#00B4D8"},
-};
-
-let curMonth = 0;
-let curDay = "Monday";
-let curView = "plan";
-let checked = {};  // key -> bool
-let dayDone = {};  // key -> bool
-
-function sk(m,d,i){ return `wk:m${m}:d${d}:e${i}`; }
-function dk(m,d){ return `wk:m${m}:d${d}:done`; }
-
-function save(key, val) {
-  try { if(val) localStorage.setItem(key,"1"); else localStorage.removeItem(key); } catch(e){}
+  return {fields: f};
 }
-
-function load() {
+function fsRead(doc) {
+  if (!doc?.fields) return null;
+  const o = {};
+  for (const [k, v] of Object.entries(doc.fields)) {
+    if ('booleanValue' in v) o[k] = v.booleanValue;
+    else if ('doubleValue' in v) o[k] = v.doubleValue;
+    else if ('integerValue' in v) o[k] = Number(v.integerValue);
+    else if ('stringValue' in v) o[k] = v.stringValue;
+  }
+  return o;
+}
+async function fbGet(col, id) {
+  if (!FB_ON) return null;
   try {
-    for(let m=0;m<3;m++) {
-      DAYS.forEach(d => {
-        PLAN[m][d].exercises.forEach((_,i) => {
-          if(localStorage.getItem(sk(m,d,i))) checked[sk(m,d,i)] = true;
-        });
-        if(localStorage.getItem(dk(m,d))) dayDone[dk(m,d)] = true;
-      });
+    const r = await fetch(`${FB_BASE}/${col}/${id}?key=${FB_API_KEY}`);
+    if (!r.ok) return null;
+    return fsRead(await r.json());
+  } catch { return null; }
+}
+async function fbSet(col, id, data) {
+  if (!FB_ON) return;
+  try {
+    await fetch(`${FB_BASE}/${col}/${id}?key=${FB_API_KEY}`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(fsFields(data))
+    });
+  } catch {}
+}
+
+// ---------- UTILS ----------
+function dateStr(d) {
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function today() { return dateStr(new Date()); }
+function dayOfWeek(ds) { return new Date(ds).getDay(); } // 0=Sun
+function fmt(n) { return n.toLocaleString(); }
+function yt(q) { return `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`; }
+
+const START = new Date('2026-10-01');
+function weekNum() {
+  const diff = Math.floor((new Date() - START) / 604800000);
+  return Math.max(0, diff);
+}
+function phase() {
+  const w = weekNum();
+  if (w < 4) return 0;
+  if (w < 8) return 1;
+  return 2;
+}
+function waterGoal() {
+  const w = weekNum();
+  if (w < 2) return 4;
+  if (w < 4) return 6;
+  return 8;
+}
+function isRestDay(ds) {
+  const d = dayOfWeek(ds);
+  return d === 0 || d === 3; // Sun or Wed
+}
+function isMonthEnd() {
+  const n = new Date();
+  const last = new Date(n.getFullYear(), n.getMonth()+1, 0).getDate();
+  return n.getDate() >= last - 1;
+}
+function monthKey() {
+  const n = new Date();
+  return `${n.getFullYear()}-${n.getMonth()}`;
+}
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+function formatDate(ds) {
+  return new Date(ds + 'T00:00:00').toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+}
+
+// ---------- STORE ----------
+const Store = {
+  _logs: {},
+  _meta: {
+    achievements: '',    // CSV of unlocked IDs
+    streak: 0,
+    longestStreak: 0,
+    lastStreakDate: '',
+    totalSteps: 0,
+    totalWorkouts: 0,
+    totalSessions: 0,
+    currentWeight: 160,
+    weighIns: '',        // CSV "date:weight,date:weight"
+    cheatEarned: '',     // monthKey when earned
+    cheatUsed: '',       // monthKey when used
+  },
+
+  load() {
+    try { this._logs = JSON.parse(localStorage.getItem('ll_logs') || '{}'); } catch {}
+    try { this._meta = {...this._meta, ...JSON.parse(localStorage.getItem('ll_meta') || '{}')}; } catch {}
+  },
+  saveMeta(patch) {
+    this._meta = {...this._meta, ...patch};
+    localStorage.setItem('ll_meta', JSON.stringify(this._meta));
+    fbSet('meta', 'main', this._meta);
+    fbSet('meta', 'logs', {data: JSON.stringify(this._logs)});
+  },
+  getLog(ds) {
+    return this._logs[ds] || {date:ds, steps:0, calBurned:0, water:0, foodLogged:false, workoutDone:false, exDone:''};
+  },
+  saveLog(ds, patch) {
+    this._logs[ds] = {...this.getLog(ds), ...patch};
+    localStorage.setItem('ll_logs', JSON.stringify(this._logs));
+    fbSet('meta', 'logs', {data: JSON.stringify(this._logs)});
+    fbSet('logs', ds, this._logs[ds]);
+  },
+  allLogs() {
+    return Object.values(this._logs).sort((a,b) => b.date.localeCompare(a.date));
+  },
+  last7Logs() {
+    const out = [];
+    const n = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(n); d.setDate(d.getDate()-i);
+      out.push(this.getLog(dateStr(d)));
     }
-  } catch(e){}
-}
-
-function getProgress(m,d) {
-  const exs = PLAN[m][d].exercises;
-  const done = exs.filter((_,i) => checked[sk(m,d,i)]).length;
-  return {done, total:exs.length, pct: Math.round((done/exs.length)*100)};
-}
-
-function getWeekPct(m) {
-  return Math.round(DAYS.reduce((acc,d) => acc + getProgress(m,d).pct, 0) / 7);
-}
-
-function setMonth(m) {
-  curMonth = m;
-  document.querySelectorAll('.month-btn').forEach((b,i) => b.classList.toggle('active', i===m));
-  renderAll();
-}
-
-function setView(v) {
-  curView = v;
-  document.querySelectorAll('.view-tab').forEach((b,i) => b.classList.toggle('active', (i===0&&v==='plan')||(i===1&&v==='tips')));
-  document.getElementById('planView').classList.toggle('hidden', v!=='plan');
-  document.getElementById('tipsView').classList.toggle('hidden', v!=='tips');
-}
-
-function setDay(d) {
-  curDay = d;
-  renderDayPills();
-  renderWorkout();
-}
-
-function renderAll() {
-  updateWeekBar();
-  renderDayPills();
-  renderWorkout();
-}
-
-function updateWeekBar() {
-  const pct = getWeekPct(curMonth);
-  document.getElementById('weekPct').textContent = pct + '%';
-  document.getElementById('weekBar').style.width = pct + '%';
-}
-
-function renderDayPills() {
-  const container = document.getElementById('dayPills');
-  container.innerHTML = '';
-  DAYS.forEach(d => {
-    const p = getProgress(curMonth, d);
-    const isDone = !!dayDone[dk(curMonth,d)];
-    const isActive = d === curDay;
-    const div = document.createElement('div');
-    div.className = 'day-pill' + (isActive?' active':'') + (isDone?' done-pill':'');
-    div.innerHTML = `<div>${d.slice(0,3).toUpperCase()}</div><div class="sub">${isDone ? '✅' : p.done > 0 ? p.done+'/'+p.total : PLAN[curMonth][d].emoji}</div>`;
-    div.onclick = () => setDay(d);
-    container.appendChild(div);
-  });
-}
-
-function renderWorkout() {
-  const w = PLAN[curMonth][curDay];
-  const p = getProgress(curMonth, curDay);
-  const isDone = !!dayDone[dk(curMonth, curDay)];
-  const c = w.color;
-
-  let html = `
-    <div class="workout-header" style="background:linear-gradient(135deg,${c}18,#111);border:1.5px solid ${c}33;">
-      <div>
-        <div class="workout-day-label" style="color:${c}">${curDay.toUpperCase()}</div>
-        <div class="workout-title">${w.emoji} ${w.title}</div>
-      </div>
-      <div>
-        <div class="workout-pct" style="color:${c}">${p.pct}%</div>
-        <div class="workout-count">${p.done}/${p.total} done</div>
-      </div>
-    </div>
-    <div class="prog-bar-bg" style="margin-bottom:14px;">
-      <div class="prog-bar-fill" style="width:${p.pct}%;background:linear-gradient(90deg,${c},${c}88);"></div>
-    </div>
-    <div class="ex-list">
-  `;
-
-  w.exercises.forEach((ex, i) => {
-    const key = sk(curMonth, curDay, i);
-    const isChecked = !!checked[key];
-    const badge = BADGES[ex.type];
-    html += `
-      <div class="ex-row${isChecked?' checked':''}" onclick="toggleCheck(${i})">
-        <div class="checkbox${isChecked?' on':''}">${isChecked?'✓':''}</div>
-        <div style="flex:1">
-          <div class="ex-name">${ex.name}</div>
-          <div class="ex-count">${ex.count}</div>
-        </div>
-        <div class="badge" style="background:${badge.bg};color:${badge.text}">${badge.label}</div>
-      </div>
-    `;
-  });
-
-  html += `</div>`;
-
-  if(isDone) {
-    html += `<div class="complete-banner"><div class="icon">🎉</div><div class="label">Day Complete!</div><div class="sub">You showed up. That's everything.</div></div>`;
+    return out;
+  },
+  weekSteps() {
+    // current week Mon-Sun
+    const n = new Date();
+    const dow = n.getDay();
+    const mondayOffset = dow === 0 ? -6 : 1 - dow;
+    const mon = new Date(n); mon.setDate(n.getDate() + mondayOffset);
+    let total = 0;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(mon); d.setDate(mon.getDate()+i);
+      total += (this.getLog(dateStr(d)).steps || 0);
+    }
+    return total;
+  },
+  monthLogs() {
+    const n = new Date();
+    return Object.values(this._logs).filter(l => {
+      const d = new Date(l.date);
+      return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth();
+    });
+  },
+  achievements() { return (this._meta.achievements || '').split(',').filter(Boolean); },
+  hasAch(id) { return this.achievements().includes(id); },
+  addAch(id) {
+    const cur = this.achievements();
+    if (cur.includes(id)) return;
+    cur.push(id);
+    this.saveMeta({achievements: cur.join(',')});
+  },
+  weighIns() {
+    return (this._meta.weighIns || '').split(',').filter(Boolean).map(s => {
+      const [d,w] = s.split(':');
+      return {date:d, weight:parseFloat(w)};
+    });
+  },
+  addWeighIn(ds, w) {
+    const cur = this.weighIns().filter(x => x.date !== ds);
+    cur.push({date:ds, weight:w});
+    cur.sort((a,b)=>a.date.localeCompare(b.date));
+    this.saveMeta({weighIns: cur.map(x=>`${x.date}:${x.weight}`).join(','), currentWeight: w});
+  },
+  async syncFirebase() {
+    if (!FB_ON) return;
+    const [meta, logsDoc] = await Promise.all([fbGet('meta','main'), fbGet('meta','logs')]);
+    if (meta) this._meta = {...this._meta, ...meta};
+    if (logsDoc?.data) {
+      try { const fl = JSON.parse(logsDoc.data); this._logs = {...fl, ...this._logs}; } catch {}
+    }
+    localStorage.setItem('ll_meta', JSON.stringify(this._meta));
+    localStorage.setItem('ll_logs', JSON.stringify(this._logs));
   }
+};
 
-  if(p.done > 0) {
-    html += `<div class="reset-row"><button class="reset-btn" onclick="resetDay()">↺ Reset Day</button></div>`;
+// ---------- MEAL PLAN ----------
+const B = [
+  {name:'Scrambled Eggs + Avocado', desc:'3 eggs scrambled, half an avocado on the side', cal:410, pro:22},
+  {name:'Egg + Salmon Toast', desc:'2 eggs any style, 2oz salmon, 1 slice bread', cal:380, pro:30},
+  {name:'Veggie Egg Omelette', desc:'3 eggs, handful of spinach and tomato inside, 1 slice toast', cal:340, pro:23},
+];
+const L = [
+  {name:'Grilled Chicken Salad', desc:'1 palm-size chicken, big salad, drizzle of olive oil', cal:370, pro:37},
+  {name:'Salmon Rice Bowl', desc:'1 palm-size salmon, half a tea-cup of rice, salad on the side', cal:400, pro:35},
+  {name:'Chickpea Curry + Rice', desc:'1 pot scoop of curry, half a tea-cup of rice', cal:390, pro:14},
+  {name:'Chicken Sandwich', desc:'1 palm-size chicken, 2 slices bread, lettuce and tomato', cal:410, pro:36},
+];
+const D = [
+  {name:'Baked Salmon + Steamed Veg', desc:'1 palm-size salmon fillet, 2 handfuls of any veg steamed', cal:315, pro:34},
+  {name:'Grilled Chicken + Salad', desc:'1 palm-size chicken breast, big salad, small drizzle olive oil', cal:350, pro:37},
+  {name:'Chickpea Curry Bowl', desc:'1.5 pot scoops of curry, no rice needed tonight', cal:380, pro:16},
+  {name:'Egg + Avocado Bowl', desc:'3 eggs any style, half avocado, side salad', cal:370, pro:22},
+];
+const SN = [
+  {name:'Hard Boiled Egg', desc:'1 egg', cal:70, pro:6},
+  {name:'Half Avocado', desc:'Half avocado with a squeeze of lemon', cal:120, pro:1},
+  {name:'Small Handful of Almonds', desc:'About 15 almonds', cal:110, pro:4},
+];
+// Day-of-week meal assignment [B, L, D, SN] (0=Sun)
+const MEAL_MAP = {
+  0:[0,2,2,0], 1:[1,0,0,1], 2:[2,1,1,2],
+  3:[0,2,3,0], 4:[1,1,0,1], 5:[2,3,1,2], 6:[0,2,3,0]
+};
+function todayMeals(ds) {
+  const dow = dayOfWeek(ds);
+  const [bi,li,di,si] = MEAL_MAP[dow];
+  return { b:B[bi], l:L[li], d:D[di], s:SN[si] };
+}
+
+// ---------- WORKOUT PLAN ----------
+const PHASES = ['Foundation (Month 1)','Build (Month 2)','Intensity (Month 3)'];
+const WO = [
+  // Phase 0 - Foundation (Oct)
+  {
+    1:{type:'Cardio Light',dur:'~20 min | ~150 cal',ex:[
+      {n:'March in Place',c:'3 minutes',q:'marching in place cardio beginner'},
+      {n:'Jumping Jacks',c:'25 reps',q:'jumping jacks beginner tutorial'},
+      {n:'Step Touches',c:'50 reps',q:'step touch aerobic exercise beginner'},
+      {n:'Low Knee Marches',c:'50 reps',q:'low march cardio exercise'},
+    ]},
+    2:{type:'Upper Body',dur:'~25 min | ~120 cal',ex:[
+      {n:'Seated Bicep Curls',c:'12 reps, 15 lb dumbbells',q:'seated dumbbell bicep curl beginner'},
+      {n:'Seated Shoulder Press',c:'10 reps, 15 lb dumbbells',q:'seated dumbbell shoulder press beginner'},
+      {n:'Bent Over Rows',c:'12 reps, 15 lb dumbbells',q:'dumbbell bent over row beginner form'},
+      {n:'Floor Chest Press',c:'10 reps, 15 lb dumbbells',q:'dumbbell floor chest press beginner'},
+      {n:'Modified Push-Ups',c:'8 reps (on knees)',q:'modified knee push up tutorial'},
+      {n:'Tricep Kickbacks',c:'10 reps, 15 lb dumbbells',q:'dumbbell tricep kickback beginner'},
+    ]},
+    3:null,
+    4:{type:'Lower Body',dur:'~25 min | ~140 cal',ex:[
+      {n:'Bodyweight Squats',c:'15 reps',q:'bodyweight squat beginner form'},
+      {n:'Glute Bridges',c:'20 reps',q:'glute bridge beginner tutorial'},
+      {n:'Side Leg Raises',c:'12 reps each side',q:'standing side leg raise beginner'},
+      {n:'Calf Raises',c:'25 reps',q:'calf raise exercise beginner'},
+      {n:'Reverse Lunges',c:'8 reps each leg',q:'reverse lunge beginner form'},
+    ]},
+    5:{type:'Full Body',dur:'~25 min | ~160 cal',ex:[
+      {n:'Jumping Jacks',c:'20 reps',q:'jumping jacks tutorial'},
+      {n:'Bodyweight Squats',c:'15 reps',q:'beginner squat form'},
+      {n:'Modified Push-Ups',c:'8 reps',q:'knee push up tutorial'},
+      {n:'Glute Bridges',c:'15 reps',q:'glute bridge exercise'},
+      {n:'Plank Hold',c:'15 seconds',q:'plank hold beginner form'},
+      {n:'High Knees',c:'20 reps each leg',q:'high knees exercise beginner'},
+    ]},
+    6:{type:'Cardio + Stretch',dur:'~40 min | ~200 cal',ex:[
+      {n:'Brisk Walk',c:'30 min (aim for 6,000+ steps)',q:'brisk walking workout for weight loss'},
+      {n:'Arm Circles',c:'20 each direction',q:'arm circles warm up stretch'},
+      {n:'Full Body Stretch',c:'10 minutes',q:'full body stretch routine beginner'},
+    ]},
+    0:null,
+  },
+  // Phase 1 - Build (Nov)
+  {
+    1:{type:'Cardio',dur:'~25 min | ~200 cal',ex:[
+      {n:'Jumping Jacks',c:'40 reps',q:'jumping jacks cardio'},
+      {n:'High Knees',c:'30 reps each leg',q:'high knees cardio exercise'},
+      {n:'Step Touches',c:'70 reps',q:'step touch aerobics'},
+      {n:'Butt Kicks',c:'30 reps each leg',q:'butt kicks cardio exercise'},
+      {n:'Low Squat Hold',c:'30 seconds',q:'squat hold exercise'},
+    ]},
+    2:{type:'Upper Body',dur:'~30 min | ~150 cal',ex:[
+      {n:'Bicep Curls',c:'15 reps, 15 lb dumbbells',q:'dumbbell bicep curl form'},
+      {n:'Shoulder Press',c:'12 reps, 15 lb dumbbells',q:'dumbbell shoulder press'},
+      {n:'Bent Over Rows',c:'15 reps, 15 lb dumbbells',q:'dumbbell bent over row'},
+      {n:'Floor Chest Press',c:'12 reps, 15 lb dumbbells',q:'dumbbell floor chest press'},
+      {n:'Modified Push-Ups',c:'12 reps',q:'modified push up exercise'},
+      {n:'Tricep Kickbacks',c:'12 reps, 15 lb dumbbells',q:'tricep kickback dumbbell'},
+      {n:'Lateral Raises',c:'10 reps, 10 lb dumbbells',q:'dumbbell lateral raise beginner'},
+    ]},
+    3:null,
+    4:{type:'Lower Body',dur:'~30 min | ~170 cal',ex:[
+      {n:'Squats',c:'20 reps',q:'squat form beginner'},
+      {n:'Sumo Squats',c:'15 reps',q:'sumo squat beginner form'},
+      {n:'Glute Bridges',c:'25 reps',q:'glute bridge exercise'},
+      {n:'Side Leg Raises',c:'15 reps each side',q:'side leg raise exercise'},
+      {n:'Calf Raises',c:'35 reps',q:'calf raise exercise'},
+      {n:'Reverse Lunges',c:'12 reps each leg',q:'reverse lunge form'},
+    ]},
+    5:{type:'Full Body',dur:'~30 min | ~200 cal',ex:[
+      {n:'Jumping Jacks',c:'30 reps',q:'jumping jacks'},
+      {n:'Squats',c:'20 reps',q:'squat form'},
+      {n:'Modified Push-Ups',c:'12 reps',q:'modified push ups'},
+      {n:'Glute Bridges',c:'20 reps',q:'glute bridge'},
+      {n:'Plank Hold',c:'25 seconds',q:'plank form'},
+      {n:'High Knees',c:'30 reps each leg',q:'high knees exercise'},
+      {n:'Mountain Climbers',c:'10 reps each leg',q:'mountain climbers beginner'},
+    ]},
+    6:{type:'Cardio + Stretch',dur:'~45 min | ~250 cal',ex:[
+      {n:'Brisk Walk / Light Jog',c:'35 min (aim for 7,000+ steps)',q:'brisk walk jog workout'},
+      {n:'Full Body Stretch',c:'10 minutes',q:'full body stretch'},
+    ]},
+    0:null,
+  },
+  // Phase 2 - Intensity (Dec)
+  {
+    1:{type:'Cardio HIIT',dur:'~30 min | ~250 cal',ex:[
+      {n:'Jumping Jacks',c:'50 reps',q:'jumping jacks'},
+      {n:'High Knees',c:'40 reps each leg',q:'high knees'},
+      {n:'Butt Kicks',c:'40 reps each leg',q:'butt kicks cardio'},
+      {n:'Jump Squats',c:'15 reps',q:'jump squat beginner'},
+      {n:'Side Shuffles',c:'30 reps each side',q:'side shuffle cardio exercise'},
+    ]},
+    2:{type:'Upper Body',dur:'~35 min | ~180 cal',ex:[
+      {n:'Bicep Curls',c:'20 reps, 15-20 lb dumbbells',q:'bicep curl dumbbell form'},
+      {n:'Shoulder Press',c:'15 reps, 15-20 lb dumbbells',q:'dumbbell shoulder press'},
+      {n:'Bent Over Rows',c:'20 reps, 15-20 lb dumbbells',q:'dumbbell row exercise'},
+      {n:'Floor Chest Press',c:'15 reps, 15-20 lb dumbbells',q:'dumbbell floor press'},
+      {n:'Full Push-Ups',c:'10 reps',q:'push up proper form'},
+      {n:'Tricep Overhead Extension',c:'15 reps, 15 lb dumbbells',q:'tricep overhead extension dumbbell'},
+      {n:'Lateral Raises',c:'12 reps, 10-15 lb dumbbells',q:'lateral raise dumbbell'},
+      {n:'Arnold Press',c:'10 reps, 10-15 lb dumbbells',q:'arnold press beginner dumbbell'},
+    ]},
+    3:null,
+    4:{type:'Lower Body + Glutes',dur:'~35 min | ~200 cal',ex:[
+      {n:'Squats',c:'25 reps',q:'squat form'},
+      {n:'Sumo Squats',c:'20 reps, 15 lb dumbbell',q:'sumo squat dumbbell'},
+      {n:'Glute Bridges',c:'30 reps',q:'glute bridge'},
+      {n:'Side Leg Raises',c:'20 reps each side',q:'side leg raises'},
+      {n:'Calf Raises',c:'50 reps',q:'calf raises'},
+      {n:'Reverse Lunges',c:'15 reps each leg',q:'reverse lunge'},
+      {n:'Romanian Deadlift',c:'12 reps, 15-20 lb dumbbells',q:'romanian deadlift dumbbell beginner'},
+    ]},
+    5:{type:'Full Body HIIT',dur:'~35 min | ~280 cal',ex:[
+      {n:'Jumping Jacks',c:'40 reps',q:'jumping jacks'},
+      {n:'Jump Squats',c:'20 reps',q:'jump squat'},
+      {n:'Push-Ups',c:'15 reps',q:'push up form'},
+      {n:'Glute Bridges',c:'25 reps',q:'glute bridge'},
+      {n:'Plank Hold',c:'40 seconds',q:'plank hold'},
+      {n:'Mountain Climbers',c:'20 reps each leg',q:'mountain climbers'},
+      {n:'High Knees',c:'40 reps each leg',q:'high knees'},
+    ]},
+    6:{type:'Cardio + Core',dur:'~50 min | ~300 cal',ex:[
+      {n:'Brisk Walk or Jog',c:'40 min (aim for 8,000+ steps)',q:'walking jogging workout for weight loss'},
+      {n:'Crunches',c:'20 reps',q:'crunch exercise proper form'},
+      {n:'Bicycle Crunches',c:'20 reps each side',q:'bicycle crunch tutorial'},
+      {n:'Plank Hold',c:'30 seconds',q:'plank form beginner'},
+    ]},
+    0:null,
   }
+];
 
-  document.getElementById('workoutArea').innerHTML = html;
+// ---------- ACHIEVEMENTS ----------
+const SP = "I know AI messages can feel impersonal so I specifically made these for you, they are from ME.";
+const PETS = ['Boo Boo','Firefly','Love'];
+function pet(id) { return PETS[id.split('').reduce((a,c)=>a+c.charCodeAt(0),0)%3]; }
+
+const ACH = {
+  first_log:      {e:'📝',t:'First Log',     msg:id=>`${pet(id)}, ${SP} You logged your food. Sounds small. It isn't.`},
+  week_logged:    {e:'📋',t:'Week Logged',    msg:id=>`${pet(id)}, a whole week of tracking. You're paying attention.`},
+  month_logged:   {e:'🗓️',t:'Month Logged',   msg:id=>`${pet(id)}, 30 days of showing up for yourself at the table.`},
+  first_deficit:  {e:'⚡',t:'First Deficit',  msg:id=>`${pet(id)}, ${SP} You're in deficit. The math is working for you.`},
+  deficit_week:   {e:'📉',t:'Deficit Week',   msg:id=>`${pet(id)}, seven days in deficit. The results are coming. Trust it.`},
+  deficit_2week:  {e:'🔥',t:'2-Week Deficit', msg:id=>`${pet(id)}, two weeks of consistent deficit. You're doing the hard part.`},
+  deficit_month:  {e:'💎',t:'Month in Deficit',msg:id=>`${pet(id)}, a full month in deficit. The scale will catch up to what you've already done.`},
+  cheat_day:      {e:'🍕',t:'Cheat Day Earned',msg:id=>`${pet(id)}, you earned your cheat day. Enjoy every bite. You worked for this.`},
+  first_steps:    {e:'👣',t:'First Steps',    msg:id=>`${pet(id)}, it starts with one step. You took thousands. Let's go.`},
+  ten_k:          {e:'🏅',t:'10K Club',       msg:id=>`${pet(id)}, 10,000 steps. That's real. Your legs did that.`},
+  walker_3:       {e:'🚶',t:'3-Day Walker',   msg:id=>`${pet(id)}, three days of 10K. You're building something.`},
+  week_goal:      {e:'⭐',t:'Week Goal Hit',  msg:id=>`${pet(id)}, ${SP} 50,000 steps in one week. You crushed the goal.`},
+  hat_trick:      {e:'🎩',t:'Hat Trick',      msg:id=>`${pet(id)}, three weeks of 50K. This is becoming who you are.`},
+  quarter_mil:    {e:'💫',t:'Quarter Million', msg:id=>`${pet(id)}, a quarter million steps. That's not nothing. That's everything.`},
+  half_mil:       {e:'🌟',t:'Half Million',   msg:id=>`${pet(id)}, half a million steps. I don't even have words.`},
+  first_sweat:    {e:'💪',t:'First Sweat',    msg:id=>`${pet(id)}, first one's done. You started. That was the hardest one.`},
+  handful:        {e:'🖐️',t:'Handful',         msg:id=>`${pet(id)}, 5 workouts in. You're in the habit now.`},
+  double_digits:  {e:'🔟',t:'Double Digits',  msg:id=>`${pet(id)}, 10 workouts. Double digits. Actual athlete behavior. ${SP}`},
+  quarter_cent:   {e:'🏆',t:'Quarter Century', msg:id=>`${pet(id)}, 25 workouts. A quarter of a hundred. You're real for this.`},
+  fifty_wo:       {e:'💥',t:'Fifty',           msg:id=>`${pet(id)}, 50 workouts. Fifty. I'm not surprised but I'm so proud.`},
+  full_week_wo:   {e:'📅',t:'Full Week',       msg:id=>`${pet(id)}, perfect workout week. Every session done.`},
+  three_wk_run:   {e:'🔑',t:'3-Week Run',      msg:id=>`${pet(id)}, three weeks of consistent training. Your body is changing.`},
+  session_done:   {e:'✅',t:'Session Complete', msg:id=>`${pet(id)}, every single exercise. Full session. You didn't skip a thing.`},
+  first_sip:      {e:'💧',t:'First Sip Habit', msg:id=>`${pet(id)}, four glasses. For you that's a big deal. Keep going.`},
+  full_pour:      {e:'🌊',t:'Full Pour',       msg:id=>`${pet(id)}, two litres. Your skin, your metabolism, your energy. They all felt that.`},
+  water_week:     {e:'🫧',t:'Water Week',      msg:id=>`${pet(id)}, a whole week of hydration. This one matters more than you think.`},
+  hydration_mo:   {e:'🏊',t:'Hydration Month', msg:id=>`${pet(id)}, 30 days of water. You rewired something real.`},
+  first_weighin:  {e:'⚖️',t:'First Weigh-In',  msg:id=>`${pet(id)}, you stepped on the scale and didn't run. That took courage.`},
+  five_down:      {e:'🎯',t:'First 5 Down',    msg:id=>`${pet(id)}, 5 pounds gone. Real, permanent progress. I'm proud of you.`},
+  halfway:        {e:'🌗',t:'Halfway There',   msg:id=>`${pet(id)}, halfway to your goal. You're literally in the middle of your transformation. ${SP}`},
+  fifteen_down:   {e:'🏋️',t:'15 Down',         msg:id=>`${pet(id)}, 15 pounds. That's 15 pounds you're never seeing again.`},
+  goal_done:      {e:'🎉',t:'Goal Achieved',   msg:id=>`${pet(id)}, you did it. You said you wanted to lose 20 lbs and you did it. I love you. I'm so proud of you.`},
+  streak_3:       {e:'✨',t:'3-Day Spark',      msg:id=>`${pet(id)}, three days straight. You don't even know what you just started.`},
+  streak_5:       {e:'🔥',t:'5-Day Fire',       msg:id=>`${pet(id)}, you've been locked in for 5 days. I see you. Keep going.`},
+  streak_7:       {e:'⚔️',t:'One Week Warrior', msg:id=>`${pet(id)}, a whole week. That's not luck. That's you. ${SP}`},
+  streak_14:      {e:'🦁',t:'Two Week Beast',   msg:id=>`${pet(id)}, two weeks of not quitting. I'm genuinely proud of you.`},
+  streak_21:      {e:'🧠',t:'21-Day Breakthrough',msg:id=>`${pet(id)}, science says 21 days builds a habit. You just became a habit.`},
+  streak_30:      {e:'👑',t:'One Month Legend', msg:id=>`${pet(id)}, 30 days. One month. You showed up every single day. I love you for this.`},
+  streak_60:      {e:'🚀',t:'Two Month Machine',msg:id=>`${pet(id)}, 60 days. You're not the same person who started this. I hope you feel it.`},
+  streak_90:      {e:'🏆',t:'The Full Run',     msg:id=>`${pet(id)}, 90 days. You did the whole thing. I knew you would.`},
+  month_1:        {e:'🍂',t:'Month 1 Complete', msg:id=>`${pet(id)}, ${SP} October is done. You made it through the hardest month. The beginning.`},
+  month_2:        {e:'🍁',t:'Month 2 Done',     msg:id=>`${pet(id)}, November wrapped. Two months deep. You're a different person already.`},
+  month_3:        {e:'🎊',t:'The Full 90',      msg:id=>`${pet(id)}, December. Done. You ran the whole program. The whole thing.`},
+  perfect_day:    {e:'💯',t:'Perfect Day',      msg:id=>`${pet(id)}, perfect day. Not one thing missed. That's rare.`},
+  perfect_week:   {e:'🌈',t:'Perfect Week',     msg:id=>`${pet(id)}, perfect week. Every goal, every day, all week. I can't even.`},
+};
+
+// ---------- ACHIEVEMENT QUEUE ----------
+let achQueue = [];
+function queueAch(id) {
+  if (Store.hasAch(id)) return;
+  Store.addAch(id);
+  achQueue.push(id);
+  if (achQueue.length === 1) showNextAch();
+}
+function showNextAch() {
+  if (!achQueue.length) return;
+  const id = achQueue[0];
+  const a = ACH[id];
+  if (!a) { achQueue.shift(); showNextAch(); return; }
+  document.getElementById('achIcon').textContent = a.e;
+  document.getElementById('achTitle').textContent = a.t;
+  document.getElementById('achMsg').textContent = a.msg(id);
+  document.getElementById('achOverlay').classList.remove('hidden');
+}
+function closeAch() {
+  achQueue.shift();
+  document.getElementById('achOverlay').classList.add('hidden');
+  if (achQueue.length) setTimeout(showNextAch, 400);
 }
 
-function toggleCheck(i) {
-  const key = sk(curMonth, curDay, i);
-  checked[key] = !checked[key];
-  save(key, checked[key]);
-
-  const exs = PLAN[curMonth][curDay].exercises;
-  const allDone = exs.every((_,j) => checked[sk(curMonth,curDay,j)]);
-  if(allDone) {
-    const dKey = dk(curMonth, curDay);
-    dayDone[dKey] = true;
-    save(dKey, true);
-    showToast("🎉 Day complete! You crushed it!");
-  }
-
-  updateWeekBar();
-  renderDayPills();
-  renderWorkout();
-}
-
-function resetDay() {
-  const exs = PLAN[curMonth][curDay].exercises;
-  exs.forEach((_,i) => { const k = sk(curMonth,curDay,i); delete checked[k]; save(k,false); });
-  const dKey = dk(curMonth,curDay);
-  delete dayDone[dKey];
-  save(dKey,false);
-  updateWeekBar();
-  renderDayPills();
-  renderWorkout();
-}
-
-let toastTimer;
-function showToast(msg) {
+// ---------- TOAST ----------
+let toastT;
+function toast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.remove('hidden');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.add('hidden'), 2800);
+  clearTimeout(toastT);
+  toastT = setTimeout(()=>el.classList.add('hidden'), 2500);
 }
 
-// Init
-load();
-renderAll();
+// ---------- CHECK ACHIEVEMENTS ----------
+function checkAch() {
+  const meta = Store._meta;
+  const log = Store.getLog(today());
+  const logs = Store.allLogs();
+  const total = logs.length;
+
+  // Food
+  if (log.foodLogged) queueAch('first_log');
+  const foodDays = logs.filter(l=>l.foodLogged).length;
+  if (foodDays >= 7) queueAch('week_logged');
+  if (foodDays >= 30) queueAch('month_logged');
+
+  // Deficit (daily cal deficit = 600 + calBurned)
+  const deficit = 600 + (log.calBurned || 0);
+  if (deficit > 0 && log.calBurned >= 0 && (log.foodLogged || log.calBurned > 0)) queueAch('first_deficit');
+  const defDays = logs.filter(l => (600 + (l.calBurned||0)) > 0 && l.foodLogged).length;
+  if (defDays >= 7) queueAch('deficit_week');
+  if (defDays >= 14) queueAch('deficit_2week');
+  if (defDays >= 30) queueAch('deficit_month');
+
+  // Steps
+  if ((log.steps||0) > 0) queueAch('first_steps');
+  if ((log.steps||0) >= 10000) queueAch('ten_k');
+  const ten_k_days = logs.filter(l=>(l.steps||0)>=10000).length;
+  if (ten_k_days >= 3) queueAch('walker_3');
+  if (Store.weekSteps() >= 50000) queueAch('week_goal');
+
+  const totalSteps = logs.reduce((a,l)=>a+(l.steps||0),0);
+  if (totalSteps >= 250000) queueAch('quarter_mil');
+  if (totalSteps >= 500000) queueAch('half_mil');
+
+  // Check hat trick (50K 3 weeks in a row)
+  // simplified: 3 of last 4 weeks hit 50K
+  let weekHits = 0;
+  for (let w = 1; w <= 4; w++) {
+    let ws = 0;
+    for (let d = 0; d < 7; d++) {
+      const dt = new Date(); dt.setDate(dt.getDate() - (w*7) + d);
+      ws += Store.getLog(dateStr(dt)).steps||0;
+    }
+    if (ws >= 50000) weekHits++;
+  }
+  if (weekHits >= 3) queueAch('hat_trick');
+
+  // Workout
+  if (log.workoutDone) queueAch('first_sweat');
+  const woTotal = logs.filter(l=>l.workoutDone).length;
+  if (woTotal >= 5)  queueAch('handful');
+  if (woTotal >= 10) queueAch('double_digits');
+  if (woTotal >= 25) queueAch('quarter_cent');
+  if (woTotal >= 50) queueAch('fifty_wo');
+
+  // Workouts this week
+  let woWeek = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    if (Store.getLog(dateStr(d)).workoutDone) woWeek++;
+  }
+  if (woWeek >= 5) queueAch('full_week_wo');
+
+  // Check exercises done
+  if (log.exDone) {
+    const wo = WO[phase()][dayOfWeek(today())];
+    if (wo && log.exDone.split(',').filter(Boolean).length >= wo.ex.length) {
+      queueAch('session_done');
+    }
+  }
+
+  // Water
+  const wg = waterGoal();
+  if ((log.water||0) >= 4) queueAch('first_sip');
+  if ((log.water||0) >= 8) queueAch('full_pour');
+  const waterDays = logs.filter(l=>(l.water||0)>=wg).length;
+  if (waterDays >= 7)  queueAch('water_week');
+  if (waterDays >= 30) queueAch('hydration_mo');
+
+  // Weight
+  const wis = Store.weighIns();
+  if (wis.length >= 1) queueAch('first_weighin');
+  if (wis.length >= 1) {
+    const lost = 160 - wis[wis.length-1].weight;
+    if (lost >= 5)  queueAch('five_down');
+    if (lost >= 10) queueAch('halfway');
+    if (lost >= 15) queueAch('fifteen_down');
+    if (lost >= 20) queueAch('goal_done');
+  }
+
+  // Streaks (compute)
+  updateStreak();
+  const s = Store._meta.streak || 0;
+  if (s >= 3)  queueAch('streak_3');
+  if (s >= 5)  queueAch('streak_5');
+  if (s >= 7)  queueAch('streak_7');
+  if (s >= 14) queueAch('streak_14');
+  if (s >= 21) queueAch('streak_21');
+  if (s >= 30) queueAch('streak_30');
+  if (s >= 60) queueAch('streak_60');
+  if (s >= 90) queueAch('streak_90');
+
+  // Monthly milestones
+  const now = new Date();
+  if (now.getMonth()===9 && now.getDate()===31) queueAch('month_1');
+  if (now.getMonth()===10 && now.getDate()===30) queueAch('month_2');
+  if (now.getMonth()===11 && now.getDate()===31) queueAch('month_3');
+
+  // Perfect day
+  const isPerfect = log.foodLogged && (log.water||0) >= Math.max(4, waterGoal()-2) &&
+    ((log.steps||0) >= 10000 || isRestDay(today())) &&
+    (isRestDay(today()) || log.workoutDone);
+  if (isPerfect) queueAch('perfect_day');
+
+  // Perfect week (all 7 days)
+  let perfWeek = true;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const ds2 = dateStr(d);
+    const l2 = Store.getLog(ds2);
+    const ok = l2.foodLogged && (l2.water||0)>=3 && ((l2.steps||0)>=8000||isRestDay(ds2));
+    if (!ok) { perfWeek = false; break; }
+  }
+  if (perfWeek) queueAch('perfect_week');
+
+  // Cheat day earned
+  checkCheatEarned();
+}
+
+function updateStreak() {
+  let streak = 0;
+  const n = new Date();
+  for (let i = 0; i < 90; i++) {
+    const d = new Date(n); d.setDate(d.getDate()-i);
+    const ds = dateStr(d);
+    const l = Store.getLog(ds);
+    if (ds === today() && !l.foodLogged) continue; // today not logged yet
+    const ok = l.foodLogged && ((l.steps||0)>=8000 || isRestDay(ds)) && (l.water||0)>=2;
+    if (!ok) break;
+    streak++;
+  }
+  const best = Math.max(streak, Store._meta.longestStreak||0);
+  Store.saveMeta({streak, longestStreak: best, lastStreakDate: today()});
+}
+
+function checkCheatEarned() {
+  const mk = monthKey();
+  if (Store._meta.cheatEarned === mk) return;
+  const mLogs = Store.monthLogs();
+  // Group into weeks (Mon-Sun)
+  const weekMap = {};
+  for (const l of mLogs) {
+    const d = new Date(l.date);
+    const mon = new Date(d);
+    const dow = d.getDay();
+    mon.setDate(d.getDate() - (dow===0?6:dow-1));
+    const wk = dateStr(mon);
+    if (!weekMap[wk]) weekMap[wk] = {steps:0, wo:0};
+    weekMap[wk].steps += l.steps||0;
+    if (l.workoutDone) weekMap[wk].wo++;
+  }
+  let qual = 0;
+  for (const w of Object.values(weekMap)) {
+    if (w.steps >= 50000 && w.wo >= 4) qual++;
+  }
+  if (qual >= 3) {
+    Store.saveMeta({cheatEarned: mk});
+    queueAch('cheat_day');
+  }
+}
+
+// ---------- APP STATE ----------
+let curTab = 'home';
+function go(tab) {
+  curTab = tab;
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
+  const nb = document.getElementById(`nb-${tab}`);
+  if (nb) nb.classList.add('on');
+  const scr = document.getElementById('screen');
+  scr.scrollTop = 0;
+  switch(tab) {
+    case 'home':     scr.innerHTML = renderHome(); break;
+    case 'food':     scr.innerHTML = renderFood(); break;
+    case 'walk':     scr.innerHTML = renderWalk(); break;
+    case 'workout':  scr.innerHTML = renderWorkout(); break;
+    case 'analytics':scr.innerHTML = renderAnalytics(); break;
+    case 'history':  scr.innerHTML = renderHistory(); break;
+  }
+}
+function refresh() { go(curTab); }
+
+// ---------- HOME ----------
+function renderHome() {
+  const meta = Store._meta;
+  const log = Store.getLog(today());
+  const streak = meta.streak || 0;
+  const weekS = Store.weekSteps();
+  const wg = waterGoal();
+  const n = new Date();
+  const dateLabel = n.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+
+  return `
+  <div class="hdr">
+    <div class="hdr-greet">${greeting()},<br><span>Linda</span></div>
+    <div class="hdr-date">${dateLabel}</div>
+    ${streak > 0 ? `<div class="streak-pill">🔥 ${streak}-day streak</div>` : '<div class="streak-pill" style="border-color:#2a2a2a;color:#444">🔥 Start your streak today</div>'}
+  </div>
+  <div class="stats3">
+    <div class="sbox">
+      <div class="sbox-icon">👟</div>
+      <div class="sbox-val" style="color:#06D6A0">${fmt(log.steps||0)}</div>
+      <div class="sbox-lbl">Today's Steps</div>
+    </div>
+    <div class="sbox">
+      <div class="sbox-icon">💧</div>
+      <div class="sbox-val" style="color:#00B4D8">${log.water||0}/${wg}</div>
+      <div class="sbox-lbl">Water Glasses</div>
+    </div>
+    <div class="sbox">
+      <div class="sbox-icon">🔥</div>
+      <div class="sbox-val" style="color:#FF4D6D">${fmt(600+(log.calBurned||0))}</div>
+      <div class="sbox-lbl">Cal Deficit</div>
+    </div>
+  </div>
+  <div class="hbtns">
+    <button class="hbtn food" onclick="go('food')">
+      <span class="bi">🍽️</span>
+      <span class="bl">Food</span>
+      <span class="bs">${log.foodLogged ? '✅ Logged' : "Today's plan"}</span>
+    </button>
+    <button class="hbtn walk" onclick="go('walk')">
+      <span class="bi">👟</span>
+      <span class="bl">Walk</span>
+      <span class="bs">${fmt(weekS)} / 50,000 this week</span>
+    </button>
+    <button class="hbtn workout" onclick="go('workout')">
+      <span class="bi">💪</span>
+      <span class="bl">Workout</span>
+      <span class="bs">${log.workoutDone ? '✅ Done' : isRestDay(today()) ? 'Rest day' : 'Not done yet'}</span>
+    </button>
+    <button class="hbtn analytics" onclick="go('analytics')">
+      <span class="bi">📊</span>
+      <span class="bl">Stats</span>
+      <span class="bs">Progress & trends</span>
+    </button>
+    <button class="hbtn history wide" onclick="go('history')">
+      <span class="bi">📅</span>
+      <span class="bl">History</span>
+      <span class="bs">Look back on your journey</span>
+    </button>
+  </div>`;
+}
+
+// ---------- FOOD ----------
+function renderFood() {
+  const log = Store.getLog(today());
+  const meals = todayMeals(today());
+  const wg = waterGoal();
+  const glasses = log.water || 0;
+  const mk = monthKey();
+  const cheatEarned = Store._meta.cheatEarned === mk;
+  const cheatUsed = Store._meta.cheatUsed === mk;
+
+  const mealHTML = (type, m, icon) => `
+  <div class="card">
+    <div class="meal-type">${icon} ${type}</div>
+    <div class="meal-name">${m.name}</div>
+    <div class="meal-desc">${m.desc}</div>
+    <div class="meal-meta">
+      <span class="mbadge mcal">~${m.cal} cal</span>
+      <span class="mbadge mpro">~${m.pro}g protein</span>
+    </div>
+  </div>`;
+
+  let glassHTML = '';
+  for (let i = 0; i < wg; i++) {
+    glassHTML += `<div class="wg ${i < glasses ? 'full':''}" onclick="logWater(${i+1})">💧</div>`;
+  }
+
+  const weekGoal = wg === 4 ? '4 glasses' : wg === 6 ? '6 glasses' : '8 glasses (2L)';
+
+  return `
+  <div class="shead">
+    <div class="shead-title" style="color:#F18F01">🍽️ Food</div>
+    <div class="shead-sub">~1,250 cal target | ${today() === today() ? new Date().toLocaleDateString('en-US',{weekday:'long'}) : ''}</div>
+  </div>
+  <div class="sec">
+    <div class="slabel">Today's Meals</div>
+    ${mealHTML('Breakfast', meals.b, '🌅')}
+    ${mealHTML('Lunch', meals.l, '☀️')}
+    ${mealHTML('Dinner', meals.d, '🌙')}
+    ${mealHTML('Snack', meals.s, '🍎')}
+    <button class="pbtn ${log.foodLogged?'done':'primary'}" onclick="logFood()" style="margin-top:4px">
+      ${log.foodLogged ? '✅ Meals logged for today' : 'Mark meals as done'}
+    </button>
+  </div>
+  <div class="divider"></div>
+  <div class="sec">
+    <div class="slabel">💧 Water Tracker — Goal: ${weekGoal}</div>
+    <div class="card" style="border-color:#00B4D822">
+      <div style="font-size:12px;color:#555;margin-bottom:8px">Tap a glass to log it</div>
+      <div class="water-row">${glassHTML}</div>
+      <div style="font-size:11px;color:#333;margin-top:10px">${glasses}/${wg} glasses today${glasses >= wg ? ' — you hit your water goal!' : ''}</div>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="sec pb">
+    <div class="slabel">🍕 Cheat Day</div>
+    <div class="cheat-card">
+      <div class="cheat-title">${cheatUsed ? 'Cheat Day Used' : cheatEarned ? 'Cheat Day Unlocked!' : 'Not Yet Earned'}</div>
+      <div class="cheat-sub">
+        ${cheatUsed
+          ? 'You used your cheat day this month. Keep going!'
+          : cheatEarned
+          ? 'You earned it. Today can be anything goes. No logging required. Enjoy every bite.'
+          : 'Hit 50K steps AND 4+ workouts per week for 3 weeks in this month to unlock your cheat day.'}
+      </div>
+      ${cheatEarned && !cheatUsed ? `<button class="pbtn primary" style="margin-top:12px" onclick="useCheatDay()">Use My Cheat Day 🎉</button>` : ''}
+    </div>
+  </div>`;
+}
+
+function logFood() {
+  Store.saveLog(today(), {foodLogged: true});
+  checkAch(); refresh();
+  toast('Meals logged! Great work, Linda.');
+}
+function logWater(n) {
+  Store.saveLog(today(), {water: n});
+  checkAch(); refresh();
+  if (n >= waterGoal()) toast('Water goal hit! Your body loves you for this.');
+}
+function useCheatDay() {
+  Store.saveMeta({cheatUsed: monthKey()});
+  refresh();
+  toast('Enjoy every single bite. You earned it!');
+}
+
+// ---------- WALK ----------
+function renderWalk() {
+  const log = Store.getLog(today());
+  const steps = log.steps || 0;
+  const calBurned = log.calBurned || 0;
+  const deficit = 600 + calBurned;
+  const weekS = Store.weekSteps();
+  const weekPct = Math.min(100, Math.round(weekS/50000*100));
+
+  const last7 = Store.last7Logs();
+  const maxS = Math.max(...last7.map(l=>l.steps||0), 1);
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const barColor = '#06D6A0';
+
+  const barsHTML = last7.map(l => {
+    const pct = Math.max(3, Math.round((l.steps||0)/maxS*100));
+    const ds = l.date;
+    const isToday = ds === today();
+    return `<div class="wbar-wrap">
+      <div class="wbar" style="height:${pct}%;background:${isToday?barColor:'#2a2a2a'};width:100%;max-height:44px;border-radius:3px 3px 0 0"></div>
+      <div class="wbar-day" style="color:${isToday?barColor:'#333'}">${dayNames[dayOfWeek(ds)]}</div>
+    </div>`;
+  }).join('');
+
+  const hypeMessages = [
+    "You're literally burning fat right now.",
+    "The math is working. Keep going.",
+    "That's real progress happening in your body.",
+    "Every calorie in deficit is a step toward your goal.",
+    "This is exactly what transformation looks like.",
+    "You're winning today, Linda.",
+    "Chemistry is on your side today.",
+  ];
+  const hype = hypeMessages[Math.floor(Math.random()*hypeMessages.length)];
+
+  return `
+  <div class="shead">
+    <div class="shead-title" style="color:#06D6A0">👟 Walk</div>
+    <div class="shead-sub">Goal: 10,000 steps/day, 50,000/week</div>
+  </div>
+  <div class="walk-hero">
+    <div style="font-size:11px;font-weight:700;color:#06D6A055;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Today's Steps</div>
+    <div class="walk-steps">${fmt(steps)}</div>
+    <div class="walk-sub">${steps >= 10000 ? '✅ Daily goal crushed!' : `${fmt(10000-steps)} to go`}</div>
+    <div style="height:4px;background:#1a1a1a;border-radius:2px;margin-top:14px;overflow:hidden">
+      <div style="height:100%;width:${Math.min(100,Math.round(steps/10000*100))}%;background:#06D6A0;border-radius:2px;transition:width 0.4s"></div>
+    </div>
+  </div>
+  <div style="padding:0 16px 10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-size:10px;font-weight:700;color:#444;letter-spacing:1px;text-transform:uppercase">This Week: ${fmt(weekS)} / 50,000</div>
+      <div style="font-size:11px;font-weight:700;color:#06D6A0">${weekPct}%</div>
+    </div>
+    <div style="height:4px;background:#1a1a1a;border-radius:2px;overflow:hidden;margin-bottom:14px">
+      <div style="height:100%;width:${weekPct}%;background:#06D6A0;border-radius:2px"></div>
+    </div>
+    <div class="mini-bars">${barsHTML}</div>
+  </div>
+  <div style="padding:0 16px 10px">
+    <div class="card">
+      <div class="slabel">Log Today's Steps</div>
+      <input class="numinput" type="number" id="inp-steps" value="${steps||''}" placeholder="e.g. 8400" inputmode="numeric" onchange="saveWalk()">
+    </div>
+    <div class="card" style="margin-top:0">
+      <div class="slabel">Calories Burned (from phone / watch)</div>
+      <input class="numinput" type="number" id="inp-cal" value="${calBurned||''}" placeholder="e.g. 320" inputmode="numeric" onchange="saveWalk()">
+      <div style="font-size:11px;color:#333;margin-top:8px">Find this in your phone's Health app or fitness watch</div>
+    </div>
+    <button class="pbtn primary" onclick="saveWalk(true)">Save</button>
+  </div>
+  <div class="deficit-box${deficit<=0?' neg':''}">
+    <div style="font-size:10px;font-weight:700;color:${deficit>0?'#06D6A055':'#FF4D6D55'};letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Today's Calorie Deficit</div>
+    <div class="deficit-num${deficit<=0?' neg':''}"> ${fmt(Math.abs(deficit))}</div>
+    <div class="deficit-lbl">calories ${deficit > 0 ? 'below maintenance' : 'over maintenance'}</div>
+    ${deficit > 0 ? `<div class="deficit-hype">${hype}</div>` : `<div class="deficit-hype neg">Keep moving and follow the meal plan to get into deficit.</div>`}
+  </div>
+  <div style="height:16px"></div>`;
+}
+
+function saveWalk(showToast2) {
+  const steps = parseInt(document.getElementById('inp-steps')?.value)||0;
+  const calBurned = parseInt(document.getElementById('inp-cal')?.value)||0;
+  Store.saveLog(today(), {steps, calBurned});
+  checkAch();
+  if (showToast2) {
+    refresh();
+    toast(`${fmt(steps)} steps logged!`);
+  }
+}
+
+// ---------- WORKOUT ----------
+function renderWorkout() {
+  const p = phase();
+  const dow = dayOfWeek(today());
+  const wo = WO[p][dow];
+  const log = Store.getLog(today());
+  const exDone = (log.exDone||'').split(',').filter(Boolean);
+  const n = new Date();
+  const phaseNames = ['Foundation (Oct)','Build (Nov)','Intensity (Dec)'];
+
+  if (!wo) {
+    return `
+    <div class="shead">
+      <div class="shead-title" style="color:#FF4D6D">💪 Workout</div>
+      <div class="shead-sub">${phaseNames[p]}</div>
+    </div>
+    <div class="rest-card">
+      <div class="rest-icon">${dow === 0 ? '😴' : '🧘'}</div>
+      <div class="rest-title">${dow === 0 ? 'Rest Day' : 'Active Recovery'}</div>
+      <div class="rest-sub">
+        ${dow === 0
+          ? 'Full rest today. Let your body recover.\nHydrate well and get good sleep.'
+          : 'No formal workout today. Focus on your steps goal.\nLight movement and stretching are welcome.'}
+      </div>
+    </div>
+    <div style="padding:16px;padding-bottom:90px">
+      <div class="card" style="text-align:center;border-color:#06D6A022">
+        <div style="font-size:13px;color:#555;line-height:1.7">Today's focus: hit your step goal,<br>stay on your meal plan, and hydrate.</div>
+      </div>
+    </div>`;
+  }
+
+  const pct = wo.ex.length > 0 ? Math.round(exDone.length/wo.ex.length*100) : 0;
+  const allDone = exDone.length >= wo.ex.length;
+
+  const exRows = wo.ex.map((ex, i) => {
+    const done = exDone.includes(String(i));
+    return `
+    <div class="ex-row ${done?'done':''}" onclick="toggleEx(${i})">
+      <div class="ex-cb ${done?'on':''}">${done?'✓':''}</div>
+      <div style="flex:1">
+        <div class="ex-name">${ex.n}</div>
+        <div class="ex-count">${ex.c}</div>
+      </div>
+      <a class="ex-yt" href="${yt(ex.q)}" target="_blank" onclick="event.stopPropagation()" title="Watch tutorial">▶</a>
+    </div>`;
+  }).join('');
+
+  return `
+  <div class="shead">
+    <div class="shead-title" style="color:#FF4D6D">💪 Workout</div>
+    <div class="shead-sub">${phaseNames[p]} — ${new Date().toLocaleDateString('en-US',{weekday:'long'})}</div>
+  </div>
+  <div class="phase-tag">Phase ${p+1} — ${PHASES[p]}</div>
+  <div class="wo-card">
+    <div class="wo-header">
+      <div>
+        <div class="wo-title">${wo.type}</div>
+        <div class="wo-meta">${wo.dur}</div>
+      </div>
+      <div class="wo-pct">${pct}%</div>
+    </div>
+    <div style="height:3px;background:#1a1a1a"><div style="height:100%;width:${pct}%;background:#FF4D6D;transition:width 0.3s"></div></div>
+    ${exRows}
+  </div>
+  ${allDone ? `<div style="background:#06D6A010;border:1.5px solid #06D6A033;border-radius:12px;padding:14px;margin:0 16px 10px;text-align:center"><div style="font-size:20px">🎉</div><div style="color:#06D6A0;font-weight:700;font-size:14px;margin-top:4px">Session complete, Linda!</div></div>` : ''}
+  <div style="padding:0 16px;padding-bottom:90px">
+    <button class="pbtn ${log.workoutDone?'done':'primary'}" onclick="markWorkout()">
+      ${log.workoutDone ? '✅ Workout marked complete' : 'Mark Full Workout Done'}
+    </button>
+    <div style="font-size:11px;color:#333;text-align:center;margin-top:10px">Tap ▶ on any exercise to watch a tutorial on YouTube</div>
+  </div>`;
+}
+
+function toggleEx(i) {
+  const log = Store.getLog(today());
+  const exDone = (log.exDone||'').split(',').filter(Boolean);
+  const idx = exDone.indexOf(String(i));
+  if (idx >= 0) exDone.splice(idx, 1); else exDone.push(String(i));
+  Store.saveLog(today(), {exDone: exDone.join(',')});
+  checkAch(); refresh();
+}
+function markWorkout() {
+  Store.saveLog(today(), {workoutDone: true});
+  Store.saveMeta({totalWorkouts: (Store._meta.totalWorkouts||0)+1});
+  checkAch(); refresh();
+  toast('Workout done! You showed up for yourself today.');
+}
+
+// ---------- ANALYTICS ----------
+function renderAnalytics() {
+  const meta = Store._meta;
+  const logs = Store.allLogs();
+  const streak = meta.streak || 0;
+  const totalSteps = logs.reduce((a,l)=>a+(l.steps||0),0);
+  const totalWO = logs.filter(l=>l.workoutDone).length;
+  const defDays = logs.filter(l=>l.foodLogged&&(600+(l.calBurned||0))>0).length;
+  const foodDays = logs.filter(l=>l.foodLogged).length;
+  const wis = Store.weighIns();
+  const curW = wis.length ? wis[wis.length-1].weight : (meta.currentWeight||160);
+  const lost = 160 - curW;
+
+  const last7 = Store.last7Logs();
+  const maxS = Math.max(...last7.map(l=>l.steps||0), 1);
+  const maxC = Math.max(...last7.map(l=>l.calBurned||0), 1);
+  const dayNames = ['S','M','T','W','T','F','S'];
+
+  const stepBars = last7.map(l => {
+    const pct = Math.max(2,Math.round((l.steps||0)/maxS*44));
+    return `<div class="mbar" style="height:${pct}px;background:#06D6A0"></div>`;
+  }).join('');
+  const calBars = last7.map(l => {
+    const pct = Math.max(2,Math.round((l.calBurned||0)/maxC*44));
+    return `<div class="mbar" style="height:${pct}px;background:#FF4D6D"></div>`;
+  }).join('');
+
+  const achCount = Store.achievements().length;
+  const totalAch = Object.keys(ACH).length;
+
+  const showWeighIn = isMonthEnd();
+  const todayWI = wis.find(w=>w.date===today());
+
+  const weightSection = wis.length >= 2 ? `
+  <div class="acard wide" style="border-color:#845EC222">
+    <div class="albl" style="color:#845EC2">Weight Journey</div>
+    <div style="display:flex;justify-content:space-between;margin-top:10px">
+      <div><div style="font-size:10px;color:#444">Start</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#555">160 lbs</div></div>
+      <div style="text-align:center"><div style="font-size:10px;color:#444">Lost</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#06D6A0">${lost>0?'-':''}${Math.abs(lost).toFixed(1)} lbs</div></div>
+      <div style="text-align:right"><div style="font-size:10px;color:#444">Now</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#fff">${curW} lbs</div></div>
+    </div>
+    <div style="height:4px;background:#1e1e1e;border-radius:2px;margin-top:12px;overflow:hidden">
+      <div style="height:100%;width:${Math.min(100,Math.round(lost/20*100))}%;background:linear-gradient(90deg,#FF4D6D,#06D6A0);border-radius:2px;transition:width 0.4s"></div>
+    </div>
+    <div style="font-size:10px;color:#333;margin-top:6px;text-align:center">${Math.round(lost/20*100)}% of 20 lb goal</div>
+  </div>` : '';
+
+  const weighInSection = showWeighIn ? `
+  <div class="weighin-card">
+    <div class="wi-title">⚖️ ${new Date().toLocaleString('en-US',{month:'long'})} Weigh-In</div>
+    <div class="wi-sub">${todayWI ? `Logged: ${todayWI.weight} lbs` : "It's the end of the month. Want to log your weight? It's optional and only visible to you."}</div>
+    ${!todayWI ? `
+    <input class="wi-inp" type="number" id="wi-val" placeholder="e.g. 155" inputmode="decimal" step="0.1">
+    <button class="wi-btn" onclick="saveWeighIn()">Log My Weight</button>` : ''}
+  </div>` : `
+  <div style="padding:0 16px 10px">
+    <div class="card" style="text-align:center;border-color:#845EC222">
+      <div style="font-size:12px;color:#444;line-height:1.7">Monthly weigh-in available on the last day of each month.<br>It's always optional, Linda.</div>
+    </div>
+  </div>`;
+
+  return `
+  <div class="shead">
+    <div class="shead-title" style="color:#845EC2">📊 Stats</div>
+    <div class="shead-sub">Your numbers tell a great story</div>
+  </div>
+  <div class="ag">
+    <div class="acard" style="border-color:#FF4D6D22">
+      <div class="anum" style="color:#FF4D6D">${streak}</div>
+      <div class="albl">Day Streak</div>
+      <div class="asub">Best: ${meta.longestStreak||0} days</div>
+    </div>
+    <div class="acard" style="border-color:#06D6A022">
+      <div class="anum" style="color:#06D6A0">${fmt(totalSteps)}</div>
+      <div class="albl">Total Steps</div>
+    </div>
+    <div class="acard" style="border-color:#FF4D6D22">
+      <div class="anum" style="color:#FF4D6D">${totalWO}</div>
+      <div class="albl">Workouts Done</div>
+    </div>
+    <div class="acard" style="border-color:#845EC222">
+      <div class="anum" style="color:#845EC2">${defDays}</div>
+      <div class="albl">Days in Deficit</div>
+    </div>
+    <div class="acard wide" style="border-color:#06D6A022">
+      <div class="albl" style="color:#06D6A0;margin-bottom:8px">Steps — Last 7 Days</div>
+      <div class="mini-bars">${stepBars}</div>
+    </div>
+    <div class="acard wide" style="border-color:#FF4D6D22">
+      <div class="albl" style="color:#FF4D6D;margin-bottom:8px">Calories Burned — Last 7 Days</div>
+      <div class="mini-bars">${calBars}</div>
+    </div>
+    ${weightSection}
+    <div class="acard" style="border-color:#F18F0122">
+      <div class="anum" style="color:#F18F01">${foodDays}</div>
+      <div class="albl">Days Food Logged</div>
+    </div>
+    <div class="acard" style="border-color:#FF4D6D22">
+      <div class="anum" style="color:#FF4D6D">${achCount}<span style="font-size:16px;color:#333">/${totalAch}</span></div>
+      <div class="albl">Achievements</div>
+    </div>
+  </div>
+  ${weighInSection}
+  <div style="padding:0 16px 6px"><div class="slabel">Unlocked Achievements</div></div>
+  <div class="ach-grid pb">
+    ${Object.entries(ACH).map(([id,a])=>`
+    <div class="ach-badge ${Store.hasAch(id)?'unlocked':''}">
+      <span>${a.e}</span>${a.t}
+    </div>`).join('')}
+  </div>`;
+}
+
+function saveWeighIn() {
+  const val = parseFloat(document.getElementById('wi-val')?.value);
+  if (!val || val < 80 || val > 400) { toast('Enter a valid weight'); return; }
+  Store.addWeighIn(today(), val);
+  checkAch(); refresh();
+  toast(`${val} lbs logged. Proud of you for showing up.`);
+}
+
+// ---------- HISTORY ----------
+function renderHistory() {
+  const logs = Store.allLogs().slice(0, 90);
+  if (!logs.length) return `
+  <div class="shead"><div class="shead-title" style="color:#00B4D8">📅 History</div><div class="shead-sub">Your journey, day by day</div></div>
+  <div style="padding:40px 16px;text-align:center">
+    <div style="font-size:32px;margin-bottom:12px">📖</div>
+    <div style="color:#444;font-size:13px;line-height:1.7">Your history will appear here<br>as you start logging your days.</div>
+  </div>`;
+
+  const rows = logs.map(l => {
+    const steps = l.steps||0;
+    const deficit = 600+(l.calBurned||0);
+    const wg = waterGoal();
+    const score = [l.foodLogged, steps>=10000||isRestDay(l.date), (l.water||0)>=4, l.workoutDone||isRestDay(l.date)].filter(Boolean).length;
+    const scoreColor = score===4?'#06D6A0':score>=2?'#F18F01':'#333';
+    return `
+    <div class="hday">
+      <div class="hday-top">
+        <div class="hday-date">${formatDate(l.date)}</div>
+        <div class="hday-score" style="color:${scoreColor}">${score}/4</div>
+      </div>
+      <div class="hm-row">
+        ${steps>0?`<span class="hm s">👟 ${fmt(steps)}</span>`:''}
+        ${l.foodLogged?`<span class="hm f">🍽️ Meals</span>`:''}
+        ${(l.water||0)>0?`<span class="hm w">💧 ${l.water} glasses</span>`:''}
+        ${l.workoutDone?`<span class="hm wk">💪 Workout</span>`:''}
+        ${deficit>0&&l.foodLogged?`<span class="hm d">-${fmt(deficit)} cal</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+  <div class="shead">
+    <div class="shead-title" style="color:#00B4D8">📅 History</div>
+    <div class="shead-sub">Your journey, day by day</div>
+  </div>
+  <div style="height:10px"></div>
+  ${rows}
+  <div style="height:20px"></div>`;
+}
+
+// ---------- SETUP ----------
+function completeSetup() {
+  const pid = document.getElementById('fbPid').value.trim();
+  const key = document.getElementById('fbKey').value.trim();
+  if (!pid || !key) { alert('Please enter both Firebase values'); return; }
+  localStorage.setItem('ll_fb_pid', pid);
+  localStorage.setItem('ll_fb_key', key);
+  document.getElementById('setup').classList.add('hidden');
+  initApp();
+}
+function skipSetup() {
+  localStorage.setItem('ll_setup_done', '1');
+  document.getElementById('setup').classList.add('hidden');
+  initApp();
+}
+
+// ---------- INIT ----------
+async function initApp() {
+  Store.load();
+  go('home');
+  // Background Firebase sync
+  setTimeout(()=>Store.syncFirebase().then(()=>{ if(curTab==='analytics')refresh(); }), 1500);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  // Check if Firebase is pre-configured in the HTML (Robi's edit)
+  if (FB_ON) {
+    localStorage.setItem('ll_setup_done', '1');
+  }
+  // Check if runtime FB config saved (from setup screen)
+  const savedPid = localStorage.getItem('ll_fb_pid');
+  const savedKey = localStorage.getItem('ll_fb_key');
+  if (savedPid && savedKey) {
+    window.FB_RUNTIME_PID = savedPid;
+    window.FB_RUNTIME_KEY = savedKey;
+  }
+
+  const setupDone = localStorage.getItem('ll_setup_done');
+  if (!setupDone && !FB_ON) {
+    document.getElementById('setup').classList.remove('hidden');
+  } else {
+    initApp();
+  }
+});
 </script>
 </body>
 </html>
