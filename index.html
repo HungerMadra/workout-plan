@@ -4,35 +4,42 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Linda's Journey</title>
+<meta name="theme-color" content="#0D0D0D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Linda's Journey">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230D0D0D'/><text y='.9em' x='50' font-size='64' text-anchor='middle'>🔥</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230D0D0D'/><text y='.9em' x='50' font-size='64' text-anchor='middle'>🔥</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!--
 =============================
   LINDA'S FITNESS APP
   Built by Robi via Claude
 =============================
-FIREBASE SETUP (5 min, one time):
-1. Go to https://console.firebase.google.com
-2. Create a project (name anything, disable analytics)
-3. Left menu: Build > Firestore Database > Create > Start in TEST MODE > Enable
-4. Left menu: Project Settings (gear icon) > Your apps > Add Web App > Register
-5. Copy projectId and apiKey from the config block shown
-6. Paste them in the two constants below
-7. Re-upload to GitHub Pages
+FIREBASE: credentials are set below. Done.
 
-OPTIONAL - Lock down Firestore (recommended after setup):
-Firestore > Rules > Publish:
+REQUIRED, DO NOT SKIP: Firestore "test mode" rules EXPIRE after 30 days.
+When they expire, syncing silently stops. Publish these permanent rules:
+Firebase console > Firestore Database > Rules tab > replace everything with:
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} { allow read, write: if true; }
+    match /meta/{doc} { allow read, write: if true; }
+    match /logs/{doc} { allow read, write: if true; }
   }
 }
+
+> Publish.
+
+RESET: open the app with ?reset=1 on the end of the URL to wipe all data
+(local + Firebase). Use once to clear your own test data before Linda starts.
 -->
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden;font-size:15px}
 body{background:#0D0D0D;color:#fff;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent;user-select:none}
-#app{height:100vh;display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative;overflow:hidden}
+#app{height:100vh;height:100dvh;display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative;overflow:hidden}
 #screen{flex:1;overflow-y:auto;overflow-x:hidden}
 #screen::-webkit-scrollbar{display:none}
 
@@ -196,19 +203,48 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes slideUp{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 .pb{padding-bottom:90px}
+
+/* DAY PICKER / UNDO / SYNC */
+.dp-link{font-size:11px;color:#3a3a3a;text-align:center;padding:10px 16px 0;text-decoration:underline;cursor:pointer}
+.dp-banner{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 16px 0;background:#F18F0114;border:1.5px solid #F18F0144;border-radius:12px;padding:10px 12px;font-size:12px;color:#F18F01}
+.dp-back{background:#F18F01;color:#000;border:none;border-radius:8px;padding:7px 10px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.todo{display:flex;gap:6px;padding:8px 16px 0}
+.todo-i{flex:1;background:#111;border:1.5px solid #1e1e1e;border-radius:10px;padding:8px 4px;text-align:center;font-size:10px;font-weight:700;color:#444;cursor:pointer;line-height:1.3}
+.todo-i.ok{border-color:#06D6A044;color:#06D6A0}
+.todo-i .ti{font-size:17px;display:block;margin-bottom:3px}
+.todo-i .tv{display:block;font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:0.5px;color:#ddd;margin-bottom:1px}
+.todo-i.ok .tv{color:#06D6A0}
+#welcome{position:fixed;inset:0;background:#000d;z-index:250;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+#welcome.hidden{display:none!important}
+.wel{background:#111;border:2px solid #FF4D6D44;border-radius:20px;padding:26px 22px;max-width:360px;width:100%}
+.wel-title{font-family:'Bebas Neue',sans-serif;font-size:30px;color:#FF4D6D;letter-spacing:2px;line-height:1}
+.wel-sub{font-size:13px;color:#888;margin-top:8px;line-height:1.6}
+.wel-step{display:flex;gap:12px;align-items:flex-start;margin-top:14px}
+.wel-n{width:26px;height:26px;border-radius:50%;background:#FF4D6D20;color:#FF4D6D;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.wel-t{font-size:13px;color:#ddd;line-height:1.5}
+.wel-t span{color:#666}
+.wel-tip{font-size:11px;color:#444;margin-top:16px;line-height:1.6;border-top:1px solid #1e1e1e;padding-top:12px}
+.hint{font-size:11px;color:#444;line-height:1.6;padding:0 16px 8px}
+.collapse-link{font-size:11px;color:#3a3a3a;text-decoration:underline;cursor:pointer;padding:4px 0 10px;text-align:center}
+.undo-link{font-size:11px;color:#444;text-align:center;margin-top:8px;text-decoration:underline;cursor:pointer;padding:6px}
+.sync-warn{font-size:10px;color:#F18F01;background:#F18F0112;border:1px solid #F18F0133;border-radius:8px;padding:6px 10px;margin-top:10px;line-height:1.5}
 </style>
 </head>
 <body>
 
-<!-- SETUP SCREEN -->
-<div id="setup" class="hidden">
-  <div class="setup-logo">LINDA'S<br>JOURNEY</div>
-  <p class="setup-sub">One-time setup. Enter your Firebase details<br>to keep data forever, on any device.</p>
-  <div class="sf"><label>Firebase Project ID</label><input id="fbPid" type="text" placeholder="e.g. linda-fitness-app" autocapitalize="none"></div>
-  <div class="sf"><label>Firebase API Key</label><input id="fbKey" type="text" placeholder="AIzaSy..." autocapitalize="none"></div>
-  <button class="sbtn" onclick="completeSetup()">Start the Journey</button>
-  <p class="setup-note">Don't have Firebase yet? See the setup guide<br>in the HTML file comments. Takes 5 minutes.<br><br>Or tap below to use this device only (no sync).</p>
-  <button class="pbtn ghost" style="margin-top:10px" onclick="skipSetup()">Use this device only</button>
+<!-- FIRST-RUN WELCOME (shown once, across all her devices) -->
+<div id="welcome" class="hidden">
+  <div class="wel">
+    <div class="wel-title">Hey Linda</div>
+    <div class="wel-sub">Robi built this for you. There is nothing to set up. Every day, three small things:</div>
+    <div class="wel-step"><div class="wel-n">1</div><div class="wel-t"><b>Food.</b> Eat today's plan, then tap <b>Mark meals as done</b>. <span>Close enough counts.</span></div></div>
+    <div class="wel-step"><div class="wel-n">2</div><div class="wel-t"><b>Walk.</b> Type your steps from your phone's Health app. <span>Aim for 10,000.</span></div></div>
+    <div class="wel-step"><div class="wel-n">3</div><div class="wel-t"><b>Water.</b> Tap a glass each time you finish one.</div></div>
+    <div class="wel-step"><div class="wel-n">+</div><div class="wel-t"><b>Workout days</b> (Mon, Tue, Thu, Fri, Sat): follow the list and tick the boxes. Tap ▶ to see how a move is done.</div></div>
+    <div class="wel-sub" style="margin-top:14px">That's the whole app. Everything saves on its own.</div>
+    <button class="sbtn" onclick="closeWelcome()">Let's go</button>
+    <div class="wel-tip">Tip: add this to your home screen so it opens like an app. iPhone: Share button, then Add to Home Screen. Android: menu, then Add to Home screen.</div>
+  </div>
 </div>
 
 <!-- ACHIEVEMENT OVERLAY -->
@@ -272,23 +308,60 @@ function fsRead(doc) {
   }
   return o;
 }
+// Returns: object (doc), {} (doc does not exist yet, which is normal on a fresh database), or null (could not reach / not allowed)
 async function fbGet(col, id) {
   if (!FB_ON) return null;
   try {
     const r = await fetch(`${FB_BASE}/${col}/${id}?key=${FB_API_KEY}`);
-    if (!r.ok) return null;
-    return fsRead(await r.json());
-  } catch { return null; }
+    if (r.status === 404) return {};
+    if (!r.ok) { Sync.lastErr = `HTTP ${r.status}`; return null; }
+    Sync.lastOk = Date.now(); Sync.lastErr = '';
+    return fsRead(await r.json()) || {};
+  } catch { Sync.lastErr = 'offline'; return null; }
 }
-async function fbSet(col, id, data) {
-  if (!FB_ON) return;
+// Writes are debounced per document (last value wins) so a burst of taps sends one request, in order.
+// Any failed write marks the store dirty; the next sync pushes everything again.
+const _fbTimers = {};
+// dirty is persisted so an offline session that gets closed still re-uploads on the next launch
+const Sync = {
+  get dirty() { try { return localStorage.getItem('ll_dirty') === '1'; } catch { return false; } },
+  set dirty(v) { try { if (v) localStorage.setItem('ll_dirty', '1'); else localStorage.removeItem('ll_dirty'); } catch {} },
+  lastOk: 0, lastErr: ''
+};
+function fbSet(col, id, data) {
+  if (!FB_ON) return Promise.resolve();
+  const key = `${col}/${id}`;
+  if (_fbTimers[key]) clearTimeout(_fbTimers[key].t);
+  return new Promise(resolve => {
+    _fbTimers[key] = { t: setTimeout(async () => {
+      delete _fbTimers[key];
+      const ok = await fbSetNow(col, id, data);
+      resolve(ok);
+    }, 500) };
+  });
+}
+async function fbSetNow(col, id, data) {
   try {
-    await fetch(`${FB_BASE}/${col}/${id}?key=${FB_API_KEY}`, {
+    const r = await fetch(`${FB_BASE}/${col}/${id}?key=${FB_API_KEY}`, {
       method: 'PATCH',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(fsFields(data))
+      body: JSON.stringify(fsFields(data)),
+      keepalive: true
     });
-  } catch {}
+    if (!r.ok) { Sync.dirty = true; Sync.lastErr = `HTTP ${r.status}`; return false; }
+    Sync.lastOk = Date.now(); Sync.lastErr = '';
+    return true;
+  } catch (e) { Sync.dirty = true; Sync.lastErr = 'offline'; return false; }
+}
+// Flush any pending debounced writes immediately (used before the page is hidden/closed)
+function fbFlush() {
+  for (const [key, v] of Object.entries(_fbTimers)) {
+    clearTimeout(v.t); delete _fbTimers[key];
+    const [col, id] = key.split('/');
+    if (col === 'meta' && id === 'main') fbSetNow('meta', 'main', Store._meta);
+    else if (col === 'meta' && id === 'logs') fbSetNow('meta', 'logs', {data: JSON.stringify(Store._logs)});
+    else if (col === 'logs') fbSetNow('logs', id, Store._logs[id] || {});
+  }
 }
 
 // ---------- UTILS ----------
@@ -297,35 +370,134 @@ function dateStr(d) {
   return `${y}-${m}-${day}`;
 }
 function today() { return dateStr(new Date()); }
-function dayOfWeek(ds) { return new Date(ds).getDay(); } // 0=Sun
+// Always parse YYYY-MM-DD as LOCAL midnight. new Date('2026-10-01') alone is UTC and shifts a day back in the US.
+function parseDS(ds) { return new Date(ds + 'T00:00:00'); }
+function dayOfWeek(ds) { return parseDS(ds).getDay(); } // 0=Sun
 function fmt(n) { return n.toLocaleString(); }
 function yt(q) { return `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`; }
 
-const START = new Date('2026-10-01');
-function weekNum() {
-  const diff = Math.floor((new Date() - START) / 604800000);
-  return Math.max(0, diff);
+const START = parseDS('2026-10-01');
+const START_WEIGHT = 160;
+const GOAL_LBS = 20;
+// Whole weeks since the program start, for a given date (calendar-day based, DST safe)
+function weekNumFor(ds) {
+  const d = parseDS(ds);
+  const days = Math.round((d - START) / 86400000);
+  return Math.max(0, Math.floor(days / 7));
 }
-function phase() {
-  const w = weekNum();
-  if (w < 4) return 0;
-  if (w < 8) return 1;
-  return 2;
+function weekNum() { return weekNumFor(today()); }
+// Phase follows the calendar month: Oct = Foundation, Nov = Build, Dec onward = Intensity
+function phaseFor(ds) {
+  if (ds >= '2026-12-01') return 2;
+  if (ds >= '2026-11-01') return 1;
+  return 0;
 }
-function waterGoal() {
-  const w = weekNum();
+function phase() { return phaseFor(today()); }
+function waterGoalFor(ds) {
+  const w = weekNumFor(ds);
   if (w < 2) return 4;
   if (w < 4) return 6;
   return 8;
 }
+// Which day is she logging? Today by default; she can switch to yesterday on Food/Walk/Workout to fix a missed day.
+let _viewYesterday = false;
+let _showCal = false;
+function yesterday() { const d = new Date(); d.setDate(d.getDate()-1); return dateStr(d); }
+function activeDate() { return _viewYesterday ? yesterday() : today(); }
+function setView(y) { _viewYesterday = !!y; refresh(); }
+function dayPicker() {
+  if (!_viewYesterday) return `<div class="dp-link" onclick="setView(true)">Forgot to log yesterday? Tap here</div>`;
+  return `<div class="dp-banner">
+    <div><b>Editing yesterday</b> (${formatDate(yesterday())})</div>
+    <button class="dp-back" onclick="setView(false)">Back to today</button>
+  </div>`;
+}
+// Input sanitizers: whole, non-negative, capped. "1e5", "-20", "" all become sane numbers.
+function cleanInt(v, max) { const n = Math.round(Number(String(v).trim())); if (!isFinite(n) || n < 0) return 0; return Math.min(n, max); }
+function cleanWeight(v) { const n = Math.round(Number(String(v).trim()) * 10) / 10; if (!isFinite(n) || n < 80 || n > 400) return null; return n; }
+// Normalize a log record (defensive: remote data or old versions may hold strings/undefined)
+function normLog(l, ds) {
+  const n = (x) => { const v = Number(x); return isFinite(v) && v > 0 ? v : 0; };
+  return {
+    date: ds || l.date,
+    steps: cleanInt(l.steps, 100000), calBurned: cleanInt(l.calBurned, 5000),
+    water: cleanInt(l.water, 20), woCal: cleanInt(l.woCal, 2000),
+    foodLogged: !!l.foodLogged, workoutDone: !!l.workoutDone, cheat: !!l.cheat,
+    exDone: String(l.exDone || '').replace(/[^0-9,]/g, ''),
+    u: n(l.u),
+  };
+}
+// Honest daily deficit: the 600 baseline only counts when she followed the meal plan.
+// Burned calories: phone/watch number if she entered one, otherwise estimated from steps (~0.04 cal/step).
+// Workout calories come from the plan estimate for that day.
+function burnedCal(l) {
+  const manual = l.calBurned || 0;
+  const fromSteps = Math.round((l.steps || 0) * 0.04);
+  return (manual > 0 ? manual : fromSteps) + (l.workoutDone ? (l.woCal || 0) : 0);
+}
+function dayDeficit(l) {
+  if (l.cheat) return 0;
+  return (l.foodLogged ? 600 : 0) + burnedCal(l);
+}
+function woCalFor(ds) {
+  const wo = WO[phaseFor(ds)][dayOfWeek(ds)];
+  if (!wo) return 0;
+  const m = (wo.dur || '').match(/~(\d+)\s*cal/);
+  return m ? parseInt(m[1]) : 0;
+}
+function waterGoal() { return waterGoalFor(today()); }
 function isRestDay(ds) {
   const d = dayOfWeek(ds);
   return d === 0 || d === 3; // Sun or Wed
 }
+// Weigh-in window: last 2 days of a month, or first 2 days of the next (in case she misses it)
 function isMonthEnd() {
   const n = new Date();
   const last = new Date(n.getFullYear(), n.getMonth()+1, 0).getDate();
-  return n.getDate() >= last - 1;
+  const inWindow = n.getDate() >= last - 1 || n.getDate() <= 2;
+  // first weigh-in window is the end of October; the 1st/2nd of October must not offer "September"
+  return inWindow && weighInMonthKey(today()) !== '2026-8';
+}
+// The month a weigh-in on date ds is "for": the 1st/2nd belong to the previous month's window
+function weighInMonthKey(ds) {
+  const d = parseDS(ds);
+  const m = d.getDate() <= 2 ? new Date(d.getFullYear(), d.getMonth()-1, 1) : d;
+  return `${m.getFullYear()}-${m.getMonth()}`;
+}
+function weighInLabel() {
+  const n = new Date();
+  const d = n.getDate() <= 2 ? new Date(n.getFullYear(), n.getMonth()-1, 1) : n;
+  return d.toLocaleString('en-US', {month:'long'});
+}
+// Mon-Sun weekly totals across all logs, keyed by the Monday's date string
+function weeklyStats() {
+  const weekMap = {};
+  for (const l of Store.allLogs()) {
+    const d = parseDS(l.date);
+    const mon = new Date(d);
+    const dow = d.getDay();
+    mon.setDate(d.getDate() - (dow===0?6:dow-1));
+    const wk = dateStr(mon);
+    if (!weekMap[wk]) weekMap[wk] = {mon: wk, steps:0, wo:0};
+    weekMap[wk].steps += l.steps||0;
+    if (l.workoutDone) weekMap[wk].wo++;
+  }
+  return weekMap;
+}
+// Longest run of consecutive Mon-Sun weeks satisfying pred (weeks with no logs count as failing)
+function consecutiveWeeks(pred) {
+  const wm = weeklyStats();
+  const keys = Object.keys(wm).sort();
+  if (!keys.length) return 0;
+  let best = 0, run = 0, prev = null;
+  for (const k of keys) {
+    const gap = prev ? Math.round((parseDS(k) - parseDS(prev)) / 86400000) : 7;
+    if (gap !== 7) run = 0;
+    run = pred(wm[k]) ? run + 1 : 0;
+    best = Math.max(best, run);
+    prev = k;
+  }
+  return best;
 }
 function monthKey() {
   const n = new Date();
@@ -358,21 +530,33 @@ const Store = {
     cheatUsed: '',       // monthKey when used
   },
 
+  _normAll(obj) {
+    const out = {};
+    for (const [ds, l] of Object.entries(obj || {})) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(ds) || !l || typeof l !== 'object') continue;
+      out[ds] = normLog(l, ds);
+    }
+    return out;
+  },
   load() {
-    try { this._logs = JSON.parse(localStorage.getItem('ll_logs') || '{}'); } catch {}
+    try { this._logs = this._normAll(JSON.parse(localStorage.getItem('ll_logs') || '{}')); } catch { this._logs = {}; }
     try { this._meta = {...this._meta, ...JSON.parse(localStorage.getItem('ll_meta') || '{}')}; } catch {}
   },
   saveMeta(patch) {
-    this._meta = {...this._meta, ...patch};
+    const next = {...this._meta, ...patch};
+    if (JSON.stringify(next) === JSON.stringify(this._meta)) return; // nothing changed, skip the writes
+    this._meta = {...next, u: Math.max(Date.now(), (this._meta.u || 0) + 1)};
     localStorage.setItem('ll_meta', JSON.stringify(this._meta));
     fbSet('meta', 'main', this._meta);
-    fbSet('meta', 'logs', {data: JSON.stringify(this._logs)});
   },
   getLog(ds) {
-    return this._logs[ds] || {date:ds, steps:0, calBurned:0, water:0, foodLogged:false, workoutDone:false, exDone:''};
+    return this._logs[ds] || normLog({}, ds);
   },
   saveLog(ds, patch) {
-    this._logs[ds] = {...this.getLog(ds), ...patch};
+    const prev = this.getLog(ds);
+    // monotonic: an edit is always newer than the record it was based on, even if this device's clock is behind
+    const u = Math.max(Date.now(), (prev.u || 0) + 1);
+    this._logs[ds] = normLog({...prev, ...patch, u}, ds);
     localStorage.setItem('ll_logs', JSON.stringify(this._logs));
     fbSet('meta', 'logs', {data: JSON.stringify(this._logs)});
     fbSet('logs', ds, this._logs[ds]);
@@ -405,7 +589,7 @@ const Store = {
   monthLogs() {
     const n = new Date();
     return Object.values(this._logs).filter(l => {
-      const d = new Date(l.date);
+      const d = parseDS(l.date);
       return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth();
     });
   },
@@ -429,15 +613,71 @@ const Store = {
     cur.sort((a,b)=>a.date.localeCompare(b.date));
     this.saveMeta({weighIns: cur.map(x=>`${x.date}:${x.weight}`).join(','), currentWeight: w});
   },
+  // Merge remote and local. Per day: newest timestamp wins. Achievements and weigh-ins: union.
+  // Returns true if anything local changed (so the screen can redraw).
+  // Merge one day from two devices. The newer record wins, but numeric data the older one had is never
+  // thrown away: if the newer record has 0 steps and the older has 9,000, the 9,000 survive.
+  // Booleans (meals/workout/cheat) follow the newer record so a deliberate undo is honored.
+  // Every device re-syncs the moment it comes to the foreground, so a stale copy is rare.
+  _mergeDay(a, b) {
+    if (!a) return b; if (!b) return a;
+    const [newer, older] = (a.u||0) >= (b.u||0) ? [a, b] : [b, a];
+    const out = {...newer};
+    for (const k of ['steps','calBurned','water','woCal']) if (!out[k] && older[k]) out[k] = older[k];
+    if (!out.exDone && older.exDone) out.exDone = older.exDone;
+    return out;
+  },
   async syncFirebase() {
-    if (!FB_ON) return;
+    if (!FB_ON) return false;
     const [meta, logsDoc] = await Promise.all([fbGet('meta','main'), fbGet('meta','logs')]);
-    if (meta) this._meta = {...this._meta, ...meta};
-    if (logsDoc?.data) {
-      try { const fl = JSON.parse(logsDoc.data); this._logs = {...fl, ...this._logs}; } catch {}
+    if (!meta && !logsDoc) {
+      // Could not reach Firebase (offline, or rules expired). Keep local, retry later.
+      if (!Sync.lastErr) Sync.lastErr = 'unreachable';
+      return false;
     }
+    const beforeMeta = JSON.stringify(this._meta), beforeLogs = JSON.stringify(this._logs);
+    let remoteLogs = {};
+    if (logsDoc?.data) { try { remoteLogs = this._normAll(JSON.parse(logsDoc.data)); } catch {} }
+    const merged = {...this._logs};
+    for (const [ds, rl] of Object.entries(remoteLogs)) merged[ds] = normLog(this._mergeDay(merged[ds], rl), ds);
+    this._logs = merged;
+    if (meta && Object.keys(meta).length) {
+      const ach = new Set([...this.achievements(), ...String(meta.achievements||'').split(',').filter(Boolean)]);
+      const wiMap = {};
+      for (const s of [String(this._meta.weighIns||''), String(meta.weighIns||'')].join(',').split(',').filter(Boolean)) {
+        const [d,w] = s.split(':'); if (d && isFinite(parseFloat(w))) wiMap[d] = w;
+      }
+      const wis = Object.keys(wiMap).sort().map(d => `${d}:${wiMap[d]}`);
+      const remoteNewer = (meta.u || 0) > (this._meta.u || 0);
+      const base = remoteNewer ? {...this._meta, ...meta} : {...meta, ...this._meta};
+      this._meta = {
+        ...base,
+        achievements: [...ach].join(','),
+        weighIns: wis.join(','),
+        longestStreak: Math.max(this._meta.longestStreak||0, meta.longestStreak||0),
+      };
+      if (wis.length) this._meta.currentWeight = parseFloat(wis[wis.length-1].split(':')[1]);
+    }
+    const changed = beforeMeta !== JSON.stringify(this._meta) || beforeLogs !== JSON.stringify(this._logs);
     localStorage.setItem('ll_meta', JSON.stringify(this._meta));
     localStorage.setItem('ll_logs', JSON.stringify(this._logs));
+    if (changed || Sync.dirty) {
+      // push the merged truth back up so every device converges (and flush anything that failed earlier)
+      const okA = await fbSetNow('meta', 'main', this._meta);
+      const okB = await fbSetNow('meta', 'logs', {data: JSON.stringify(this._logs)});
+      if (okA && okB) Sync.dirty = false;
+    }
+    return changed;
+  },
+  // Wipe everything, local and remote. Used by ?reset=1 (for Robi to clear test data).
+  async resetAll() {
+    localStorage.removeItem('ll_logs'); localStorage.removeItem('ll_meta');
+    this._logs = {};
+    this._meta = {achievements:'', streak:0, longestStreak:0, lastStreakDate:'', totalSteps:0, totalWorkouts:0, totalSessions:0, currentWeight:160, weighIns:'', cheatEarned:'', cheatUsed:'', u: Date.now()};
+    if (FB_ON) {
+      await fbSetNow('meta', 'main', this._meta);
+      await fbSetNow('meta', 'logs', {data: '{}'});
+    }
   }
 };
 
@@ -662,9 +902,10 @@ const ACH = {
 
 // ---------- ACHIEVEMENT QUEUE ----------
 let achQueue = [];
+// An achievement is only saved once she has actually seen it (on "Thank you"), so if the app is
+// closed mid-popup the message comes back next time instead of being lost.
 function queueAch(id) {
-  if (Store.hasAch(id)) return;
-  Store.addAch(id);
+  if (Store.hasAch(id) || achQueue.includes(id)) return;
   achQueue.push(id);
   if (achQueue.length === 1) showNextAch();
 }
@@ -679,9 +920,11 @@ function showNextAch() {
   document.getElementById('achOverlay').classList.remove('hidden');
 }
 function closeAch() {
-  achQueue.shift();
+  const id = achQueue.shift();
+  if (id) Store.addAch(id);
   document.getElementById('achOverlay').classList.add('hidden');
   if (achQueue.length) setTimeout(showNextAch, 400);
+  else if (curTab === 'analytics') refresh();
 }
 
 // ---------- TOAST ----------
@@ -695,94 +938,80 @@ function toast(msg) {
 }
 
 // ---------- CHECK ACHIEVEMENTS ----------
+// Day-level predicates (used by achievements, stats and history so they never disagree)
+function isDefDay(l) { return l.foodLogged && !l.cheat && burnedCal(l) >= 200; }
+function isPerfectDay(l) {
+  const ds = l.date;
+  if (l.cheat) return false;
+  return l.foodLogged && (l.water||0) >= Math.max(4, waterGoalFor(ds)-2) &&
+    ((l.steps||0) >= 10000 || isRestDay(ds)) && (isRestDay(ds) || l.workoutDone);
+}
+function monthFoodDays(mk) {
+  return Store.allLogs().filter(l => l.foodLogged && (() => { const d = parseDS(l.date); return `${d.getFullYear()}-${d.getMonth()}` === mk; })()).length;
+}
 function checkAch() {
-  const meta = Store._meta;
-  const log = Store.getLog(today());
   const logs = Store.allLogs();
-  const total = logs.length;
+  const any = pred => logs.some(pred);
+  const count = pred => logs.filter(pred).length;
 
   // Food
-  if (log.foodLogged) queueAch('first_log');
-  const foodDays = logs.filter(l=>l.foodLogged).length;
+  if (any(l=>l.foodLogged)) queueAch('first_log');
+  const foodDays = count(l=>l.foodLogged);
   if (foodDays >= 7) queueAch('week_logged');
   if (foodDays >= 30) queueAch('month_logged');
 
-  // Deficit (daily cal deficit = 600 + calBurned)
-  const deficit = 600 + (log.calBurned || 0);
-  if (deficit > 0 && log.calBurned >= 0 && (log.foodLogged || log.calBurned > 0)) queueAch('first_deficit');
-  const defDays = logs.filter(l => (600 + (l.calBurned||0)) > 0 && l.foodLogged).length;
+  // Deficit: she followed the plan AND moved (burned 200+ on top of the baseline).
+  if (any(isDefDay)) queueAch('first_deficit');
+  const defDays = count(isDefDay);
   if (defDays >= 7) queueAch('deficit_week');
   if (defDays >= 14) queueAch('deficit_2week');
   if (defDays >= 30) queueAch('deficit_month');
 
   // Steps
-  if ((log.steps||0) > 0) queueAch('first_steps');
-  if ((log.steps||0) >= 10000) queueAch('ten_k');
-  const ten_k_days = logs.filter(l=>(l.steps||0)>=10000).length;
-  if (ten_k_days >= 3) queueAch('walker_3');
-  if (Store.weekSteps() >= 50000) queueAch('week_goal');
-
+  if (any(l=>(l.steps||0) > 0)) queueAch('first_steps');
+  if (any(l=>(l.steps||0) >= 10000)) queueAch('ten_k');
+  if (count(l=>(l.steps||0)>=10000) >= 3) queueAch('walker_3');
+  const wm = weeklyStats();
+  if (Object.values(wm).some(w => w.steps >= 50000)) queueAch('week_goal');
+  if (consecutiveWeeks(w => w.steps >= 50000) >= 3) queueAch('hat_trick');
   const totalSteps = logs.reduce((a,l)=>a+(l.steps||0),0);
   if (totalSteps >= 250000) queueAch('quarter_mil');
   if (totalSteps >= 500000) queueAch('half_mil');
 
-  // Check hat trick (50K 3 weeks in a row)
-  // simplified: 3 of last 4 weeks hit 50K
-  let weekHits = 0;
-  for (let w = 1; w <= 4; w++) {
-    let ws = 0;
-    for (let d = 0; d < 7; d++) {
-      const dt = new Date(); dt.setDate(dt.getDate() - (w*7) + d);
-      ws += Store.getLog(dateStr(dt)).steps||0;
-    }
-    if (ws >= 50000) weekHits++;
-  }
-  if (weekHits >= 3) queueAch('hat_trick');
-
   // Workout
-  if (log.workoutDone) queueAch('first_sweat');
-  const woTotal = logs.filter(l=>l.workoutDone).length;
+  if (any(l=>l.workoutDone)) queueAch('first_sweat');
+  const woTotal = count(l=>l.workoutDone);
   if (woTotal >= 5)  queueAch('handful');
   if (woTotal >= 10) queueAch('double_digits');
   if (woTotal >= 25) queueAch('quarter_cent');
   if (woTotal >= 50) queueAch('fifty_wo');
+  if (Object.values(wm).some(w => w.wo >= 5)) queueAch('full_week_wo');   // all 5 program sessions in a Mon-Sun week
+  if (consecutiveWeeks(w => w.wo >= 4) >= 3) queueAch('three_wk_run');   // 4+ workouts, 3 weeks in a row
+  if (any(l => {
+    if (!l.exDone) return false;
+    const wo = WO[phaseFor(l.date)][dayOfWeek(l.date)];
+    return wo && l.exDone.split(',').filter(Boolean).length >= wo.ex.length;
+  })) queueAch('session_done');
 
-  // Workouts this week
-  let woWeek = 0;
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(); d.setDate(d.getDate()-i);
-    if (Store.getLog(dateStr(d)).workoutDone) woWeek++;
-  }
-  if (woWeek >= 5) queueAch('full_week_wo');
-
-  // Check exercises done
-  if (log.exDone) {
-    const wo = WO[phase()][dayOfWeek(today())];
-    if (wo && log.exDone.split(',').filter(Boolean).length >= wo.ex.length) {
-      queueAch('session_done');
-    }
-  }
-
-  // Water
-  const wg = waterGoal();
-  if ((log.water||0) >= 4) queueAch('first_sip');
-  if ((log.water||0) >= 8) queueAch('full_pour');
-  const waterDays = logs.filter(l=>(l.water||0)>=wg).length;
+  // Water (each day judged against the goal that applied on that day)
+  if (any(l=>(l.water||0) >= 4)) queueAch('first_sip');
+  if (any(l=>(l.water||0) >= 8)) queueAch('full_pour');
+  const waterDays = count(l=>(l.water||0) >= waterGoalFor(l.date));
   if (waterDays >= 7)  queueAch('water_week');
   if (waterDays >= 30) queueAch('hydration_mo');
 
   // Weight
   const wis = Store.weighIns();
-  if (wis.length >= 1) queueAch('first_weighin');
   if (wis.length >= 1) {
-    const lost = 160 - wis[wis.length-1].weight;
+    queueAch('first_weighin');
+    const lost = START_WEIGHT - wis[wis.length-1].weight;
     if (lost >= 5)  queueAch('five_down');
     if (lost >= 10) queueAch('halfway');
     if (lost >= 15) queueAch('fifteen_down');
-    if (lost >= 20) queueAch('goal_done');
+    if (lost >= GOAL_LBS) queueAch('goal_done');
   }
 
-  // Streaks (compute)
+  // Streaks
   updateStreak();
   const s = Store._meta.streak || 0;
   if (s >= 3)  queueAch('streak_3');
@@ -794,42 +1023,40 @@ function checkAch() {
   if (s >= 60) queueAch('streak_60');
   if (s >= 90) queueAch('streak_90');
 
-  // Monthly milestones
-  const now = new Date();
-  if (now.getMonth()===9 && now.getDate()===31) queueAch('month_1');
-  if (now.getMonth()===10 && now.getDate()===30) queueAch('month_2');
-  if (now.getMonth()===11 && now.getDate()===31) queueAch('month_3');
+  // Monthly milestones: on or after the last day of the month, and only if she actually showed up (10+ logged days)
+  const td = today();
+  if (td >= '2026-10-31' && monthFoodDays('2026-9')  >= 10) queueAch('month_1');
+  if (td >= '2026-11-30' && monthFoodDays('2026-10') >= 10) queueAch('month_2');
+  if (td >= '2026-12-31' && monthFoodDays('2026-11') >= 10) queueAch('month_3');
 
-  // Perfect day
-  const isPerfect = log.foodLogged && (log.water||0) >= Math.max(4, waterGoal()-2) &&
-    ((log.steps||0) >= 10000 || isRestDay(today())) &&
-    (isRestDay(today()) || log.workoutDone);
-  if (isPerfect) queueAch('perfect_day');
-
-  // Perfect week (all 7 days)
-  let perfWeek = true;
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(); d.setDate(d.getDate()-i);
-    const ds2 = dateStr(d);
-    const l2 = Store.getLog(ds2);
-    const ok = l2.foodLogged && (l2.water||0)>=3 && ((l2.steps||0)>=8000||isRestDay(ds2));
-    if (!ok) { perfWeek = false; break; }
+  // Perfect day / perfect week (7 consecutive perfect days ending today or yesterday)
+  if (any(isPerfectDay)) queueAch('perfect_day');
+  for (const endOffset of [0, 1]) {
+    let ok = true;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(); d.setDate(d.getDate() - endOffset - i);
+      if (!isPerfectDay(Store.getLog(dateStr(d)))) { ok = false; break; }
+    }
+    if (ok) { queueAch('perfect_week'); break; }
   }
-  if (perfWeek) queueAch('perfect_week');
 
   // Cheat day earned
   checkCheatEarned();
 }
 
+function streakDayOk(l, ds) {
+  if (l.cheat) return true; // an earned cheat day never breaks a streak
+  return l.foodLogged && ((l.steps||0)>=8000 || isRestDay(ds)) && (l.water||0)>=2;
+}
 function updateStreak() {
   let streak = 0;
   const n = new Date();
-  for (let i = 0; i < 90; i++) {
+  for (let i = 0; i < 120; i++) {
     const d = new Date(n); d.setDate(d.getDate()-i);
     const ds = dateStr(d);
     const l = Store.getLog(ds);
-    if (ds === today() && !l.foodLogged) continue; // today not logged yet
-    const ok = l.foodLogged && ((l.steps||0)>=8000 || isRestDay(ds)) && (l.water||0)>=2;
+    const ok = streakDayOk(l, ds);
+    if (ds === today() && !ok) continue; // today is still in progress, don't count it against her yet
     if (!ok) break;
     streak++;
   }
@@ -837,24 +1064,15 @@ function updateStreak() {
   Store.saveMeta({streak, longestStreak: best, lastStreakDate: today()});
 }
 
+// Cheat day: 3 qualifying weeks (50K+ steps AND 4+ workouts, Mon-Sun) in the current month.
+// A week belongs to the month its Monday falls in, so weeks never get split at month boundaries.
 function checkCheatEarned() {
   const mk = monthKey();
   if (Store._meta.cheatEarned === mk) return;
-  const mLogs = Store.monthLogs();
-  // Group into weeks (Mon-Sun)
-  const weekMap = {};
-  for (const l of mLogs) {
-    const d = new Date(l.date);
-    const mon = new Date(d);
-    const dow = d.getDay();
-    mon.setDate(d.getDate() - (dow===0?6:dow-1));
-    const wk = dateStr(mon);
-    if (!weekMap[wk]) weekMap[wk] = {steps:0, wo:0};
-    weekMap[wk].steps += l.steps||0;
-    if (l.workoutDone) weekMap[wk].wo++;
-  }
   let qual = 0;
-  for (const w of Object.values(weekMap)) {
+  for (const w of Object.values(weeklyStats())) {
+    const mon = parseDS(w.mon);
+    if (`${mon.getFullYear()}-${mon.getMonth()}` !== mk) continue;
     if (w.steps >= 50000 && w.wo >= 4) qual++;
   }
   if (qual >= 3) {
@@ -866,6 +1084,7 @@ function checkCheatEarned() {
 // ---------- APP STATE ----------
 let curTab = 'home';
 function go(tab) {
+  if (tab !== curTab) _viewYesterday = false;
   curTab = tab;
   document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
   const nb = document.getElementById(`nb-${tab}`);
@@ -897,30 +1116,24 @@ function renderHome() {
   <div class="hdr">
     <div class="hdr-greet">${greeting()},<br><span>Linda</span></div>
     <div class="hdr-date">${dateLabel}</div>
-    ${streak > 0 ? `<div class="streak-pill">🔥 ${streak}-day streak</div>` : '<div class="streak-pill" style="border-color:#2a2a2a;color:#444">🔥 Start your streak today</div>'}
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${streak > 0 ? `<div class="streak-pill">🔥 ${streak}-day streak</div>` : '<div class="streak-pill" style="border-color:#2a2a2a;color:#444">🔥 Start your streak today</div>'}
+      ${dayDeficit(log) > 0 ? `<div class="streak-pill" style="border-color:#06D6A033;background:#06D6A010;color:#06D6A0">${fmt(dayDeficit(log))} cal deficit today</div>` : ''}
+    </div>
+    ${Sync.dirty || (FB_ON && Sync.lastErr && !Sync.lastOk) ? `<div class="sync-warn">Saved on this phone. Will sync when online${Sync.lastErr ? ` (${Sync.lastErr})` : ''}.</div>` : ''}
   </div>
-  <div class="stats3">
-    <div class="sbox">
-      <div class="sbox-icon">👟</div>
-      <div class="sbox-val" style="color:#06D6A0">${fmt(log.steps||0)}</div>
-      <div class="sbox-lbl">Today's Steps</div>
-    </div>
-    <div class="sbox">
-      <div class="sbox-icon">💧</div>
-      <div class="sbox-val" style="color:#00B4D8">${log.water||0}/${wg}</div>
-      <div class="sbox-lbl">Water Glasses</div>
-    </div>
-    <div class="sbox">
-      <div class="sbox-icon">🔥</div>
-      <div class="sbox-val" style="color:#FF4D6D">${fmt(600+(log.calBurned||0))}</div>
-      <div class="sbox-lbl">Cal Deficit</div>
-    </div>
+  <div class="slabel" style="padding:16px 16px 0">Today</div>
+  <div class="todo">
+    <div class="todo-i ${log.foodLogged?'ok':''}" onclick="go('food')"><span class="ti">${log.cheat?'🍕':log.foodLogged?'✅':'🍽️'}</span><span class="tv">${log.cheat?'Cheat':log.foodLogged?'Done':'Not yet'}</span>Meals</div>
+    <div class="todo-i ${(log.steps||0)>=10000?'ok':''}" onclick="go('walk')"><span class="ti">${(log.steps||0)>=10000?'✅':'👟'}</span><span class="tv">${fmt(log.steps||0)}</span>of 10K steps</div>
+    <div class="todo-i ${(log.water||0)>=wg?'ok':''}" onclick="go('food')"><span class="ti">${(log.water||0)>=wg?'✅':'💧'}</span><span class="tv">${log.water||0} / ${wg}</span>Water</div>
+    <div class="todo-i ${log.workoutDone||isRestDay(today())?'ok':''}" onclick="go('workout')"><span class="ti">${log.workoutDone?'✅':isRestDay(today())?'😴':'💪'}</span><span class="tv">${log.workoutDone?'Done':isRestDay(today())?'Rest':'Not yet'}</span>Workout</div>
   </div>
   <div class="hbtns">
     <button class="hbtn food" onclick="go('food')">
       <span class="bi">🍽️</span>
       <span class="bl">Food</span>
-      <span class="bs">${log.foodLogged ? '✅ Logged' : "Today's plan"}</span>
+      <span class="bs">${log.cheat ? '🍕 Cheat day' : log.foodLogged ? '✅ Logged' : "Today's plan"}</span>
     </button>
     <button class="hbtn walk" onclick="go('walk')">
       <span class="bi">👟</span>
@@ -947,13 +1160,15 @@ function renderHome() {
 
 // ---------- FOOD ----------
 function renderFood() {
-  const log = Store.getLog(today());
-  const meals = todayMeals(today());
-  const wg = waterGoal();
+  const ds = activeDate();
+  const log = Store.getLog(ds);
+  const meals = todayMeals(ds);
+  const wg = waterGoalFor(ds);
   const glasses = log.water || 0;
   const mk = monthKey();
   const cheatEarned = Store._meta.cheatEarned === mk;
   const cheatUsed = Store._meta.cheatUsed === mk;
+  const dayWord = _viewYesterday ? 'yesterday' : 'today';
 
   const mealHTML = (type, m, icon) => `
   <div class="card">
@@ -970,31 +1185,39 @@ function renderFood() {
   for (let i = 0; i < wg; i++) {
     glassHTML += `<div class="wg ${i < glasses ? 'full':''}" onclick="logWater(${i+1})">💧</div>`;
   }
-
   const weekGoal = wg === 4 ? '4 glasses' : wg === 6 ? '6 glasses' : '8 glasses (2L)';
 
   return `
   <div class="shead">
     <div class="shead-title" style="color:#F18F01">🍽️ Food</div>
-    <div class="shead-sub">~1,250 cal target | ${today() === today() ? new Date().toLocaleDateString('en-US',{weekday:'long'}) : ''}</div>
+    <div class="shead-sub">~1,250 cal target | ${parseDS(ds).toLocaleDateString('en-US',{weekday:'long'})}</div>
   </div>
+  ${dayPicker()}
   <div class="sec">
-    <div class="slabel">Today's Meals</div>
+    ${log.cheat ? `
+    <div class="card" style="border-color:#F18F0144;text-align:center;padding:24px 16px">
+      <div style="font-size:34px">🍕</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#F18F01;letter-spacing:1px;margin-top:6px">Cheat Day</div>
+      <div style="font-size:12px;color:#555;margin-top:6px;line-height:1.6">Anything goes ${dayWord}, Linda. No plan, no counting.<br>Your streak is safe. Enjoy every bite.</div>
+    </div>` : `
+    <div class="slabel">${_viewYesterday ? "Yesterday's" : "Today's"} Meals</div>
     ${mealHTML('Breakfast', meals.b, '🌅')}
     ${mealHTML('Lunch', meals.l, '☀️')}
     ${mealHTML('Dinner', meals.d, '🌙')}
     ${mealHTML('Snack', meals.s, '🍎')}
     <button class="pbtn ${log.foodLogged?'done':'primary'}" onclick="logFood()" style="margin-top:4px">
-      ${log.foodLogged ? '✅ Meals logged for today' : 'Mark meals as done'}
+      ${log.foodLogged ? `✅ Meals logged for ${dayWord}` : `Mark meals as done`}
     </button>
+    ${log.foodLogged ? `<div class="undo-link" onclick="unlogFood()">Logged by mistake? Undo</div>` : `<div style="font-size:10px;color:#333;text-align:center;margin-top:6px">Followed the plan, give or take? That counts. Tap it.</div>`}`}
   </div>
   <div class="divider"></div>
   <div class="sec">
-    <div class="slabel">💧 Water Tracker — Goal: ${weekGoal}</div>
+    <div class="slabel">💧 Water Tracker. Goal: ${weekGoal}</div>
     <div class="card" style="border-color:#00B4D822">
-      <div style="font-size:12px;color:#555;margin-bottom:8px">Tap a glass to log it</div>
+      <div style="font-size:12px;color:#555;margin-bottom:8px">Tap the glass you just finished</div>
       <div class="water-row">${glassHTML}</div>
-      <div style="font-size:11px;color:#333;margin-top:10px">${glasses}/${wg} glasses today${glasses >= wg ? ' — you hit your water goal!' : ''}</div>
+      <div style="font-size:11px;color:#333;margin-top:10px">${glasses}/${wg} glasses ${dayWord}${glasses >= wg ? '. You hit your water goal!' : ''}</div>
+      ${glasses > 0 ? `<div class="undo-link" onclick="removeWater()">Remove one</div>` : ''}
     </div>
   </div>
   <div class="divider"></div>
@@ -1006,36 +1229,60 @@ function renderFood() {
         ${cheatUsed
           ? 'You used your cheat day this month. Keep going!'
           : cheatEarned
-          ? 'You earned it. Today can be anything goes. No logging required. Enjoy every bite.'
+          ? 'You earned it. Pick any day this month. No plan, no counting, and your streak is safe.'
           : 'Hit 50K steps AND 4+ workouts per week for 3 weeks in this month to unlock your cheat day.'}
       </div>
-      ${cheatEarned && !cheatUsed ? `<button class="pbtn primary" style="margin-top:12px" onclick="useCheatDay()">Use My Cheat Day 🎉</button>` : ''}
+      ${cheatEarned && !cheatUsed && !_viewYesterday ? `<button class="pbtn primary" style="margin-top:12px" onclick="useCheatDay()">Use My Cheat Day Today 🎉</button>` : ''}
     </div>
   </div>`;
 }
 
 function logFood() {
-  Store.saveLog(today(), {foodLogged: true});
+  const ds = activeDate();
+  if (Store.getLog(ds).foodLogged) { toast('Already logged. You are good.'); return; }
+  Store.saveLog(ds, {foodLogged: true});
   checkAch(); refresh();
   toast('Meals logged! Great work, Linda.');
 }
-function logWater(n) {
-  Store.saveLog(today(), {water: n});
+function unlogFood() {
+  Store.saveLog(activeDate(), {foodLogged: false});
   checkAch(); refresh();
-  if (n >= waterGoal()) toast('Water goal hit! Your body loves you for this.');
+  toast('Undone.');
+}
+function logWater(n) {
+  const ds = activeDate();
+  const cur = Store.getLog(ds).water || 0;
+  if (n === cur) return; // same glass tapped twice: nothing to do
+  Store.saveLog(ds, {water: n});
+  checkAch(); refresh();
+  if (n >= waterGoalFor(ds) && cur < waterGoalFor(ds)) toast('Water goal hit! Your body loves you for this.');
+}
+function removeWater() {
+  const ds = activeDate();
+  const cur = Store.getLog(ds).water || 0;
+  if (cur <= 0) return;
+  Store.saveLog(ds, {water: cur - 1});
+  checkAch(); refresh();
 }
 function useCheatDay() {
-  Store.saveMeta({cheatUsed: monthKey()});
-  refresh();
+  // A cheat day counts as a logged day so her streak stays intact. Deficit for the day is 0.
+  if (Store._meta.cheatUsed === monthKey()) { toast('Cheat day already used this month.'); return; }
+  if (!confirm('Use your cheat day today? One per month.')) return;
+  Store.saveLog(today(), {foodLogged: true, cheat: true});
+  Store.saveMeta({cheatUsed: monthKey(), cheatDate: today()});
+  checkAch(); refresh();
   toast('Enjoy every single bite. You earned it!');
 }
 
 // ---------- WALK ----------
 function renderWalk() {
-  const log = Store.getLog(today());
+  const ds0 = activeDate();
+  const log = Store.getLog(ds0);
+  const dayWord = _viewYesterday ? "Yesterday's" : "Today's";
   const steps = log.steps || 0;
   const calBurned = log.calBurned || 0;
-  const deficit = 600 + calBurned;
+  const deficit = dayDeficit(log);
+  const burned = burnedCal(log);
   const weekS = Store.weekSteps();
   const weekPct = Math.min(100, Math.round(weekS/50000*100));
 
@@ -1070,8 +1317,9 @@ function renderWalk() {
     <div class="shead-title" style="color:#06D6A0">👟 Walk</div>
     <div class="shead-sub">Goal: 10,000 steps/day, 50,000/week</div>
   </div>
+  ${dayPicker()}
   <div class="walk-hero">
-    <div style="font-size:11px;font-weight:700;color:#06D6A055;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Today's Steps</div>
+    <div style="font-size:11px;font-weight:700;color:#06D6A055;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">${dayWord} Steps</div>
     <div class="walk-steps">${fmt(steps)}</div>
     <div class="walk-sub">${steps >= 10000 ? '✅ Daily goal crushed!' : `${fmt(10000-steps)} to go`}</div>
     <div style="height:4px;background:#1a1a1a;border-radius:2px;margin-top:14px;overflow:hidden">
@@ -1090,30 +1338,38 @@ function renderWalk() {
   </div>
   <div style="padding:0 16px 10px">
     <div class="card">
-      <div class="slabel">Log Today's Steps</div>
-      <input class="numinput" type="number" id="inp-steps" value="${steps||''}" placeholder="e.g. 8400" inputmode="numeric" onchange="saveWalk()">
+      <div class="slabel">Log ${dayWord} Steps</div>
+      <input class="numinput" type="number" id="inp-steps" min="0" max="100000" step="1" value="${steps||''}" placeholder="e.g. 8400" inputmode="numeric" onchange="saveWalk()">
+      <div style="font-size:11px;color:#444;margin-top:8px;line-height:1.5">Find it in <b>Health</b> (iPhone) or <b>Samsung Health / Google Fit</b> (Android). Type the day's total any time, it updates.</div>
     </div>
+    ${calBurned > 0 || _showCal ? `
     <div class="card" style="margin-top:0">
-      <div class="slabel">Calories Burned (from phone / watch)</div>
-      <input class="numinput" type="number" id="inp-cal" value="${calBurned||''}" placeholder="e.g. 320" inputmode="numeric" onchange="saveWalk()">
-      <div style="font-size:11px;color:#333;margin-top:8px">Find this in your phone's Health app or fitness watch</div>
-    </div>
+      <div class="slabel">Calories Burned (optional)</div>
+      <input class="numinput" type="number" id="inp-cal" min="0" max="5000" step="1" value="${calBurned||''}" placeholder="from your watch" inputmode="numeric" onchange="saveWalk()">
+      <div style="font-size:11px;color:#333;margin-top:8px">Only if your watch or Health app shows it. Otherwise the app estimates from steps.</div>
+    </div>` : `<div class="collapse-link" onclick="_showCal=true;refresh()">Have a watch? Add calories burned</div>`}
     <button class="pbtn primary" onclick="saveWalk(true)">Save</button>
   </div>
   <div class="deficit-box${deficit<=0?' neg':''}">
-    <div style="font-size:10px;font-weight:700;color:${deficit>0?'#06D6A055':'#FF4D6D55'};letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Today's Calorie Deficit</div>
-    <div class="deficit-num${deficit<=0?' neg':''}"> ${fmt(Math.abs(deficit))}</div>
-    <div class="deficit-lbl">calories ${deficit > 0 ? 'below maintenance' : 'over maintenance'}</div>
-    ${deficit > 0 ? `<div class="deficit-hype">${hype}</div>` : `<div class="deficit-hype neg">Keep moving and follow the meal plan to get into deficit.</div>`}
+    <div style="font-size:10px;font-weight:700;color:${deficit>0?'#06D6A055':'#FF4D6D55'};letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">${dayWord} Calorie Deficit</div>
+    <div class="deficit-num${deficit<=0?' neg':''}">${fmt(Math.abs(deficit))}</div>
+    <div class="deficit-lbl">${log.cheat ? 'cheat day, no counting' : deficit > 0 ? 'calories below maintenance' : 'log your meals to start counting'}</div>
+    ${log.cheat ? '' : deficit > 0
+      ? `<div class="deficit-hype">${hype}</div><div style="font-size:10px;color:#333;margin-top:8px">${log.foodLogged ? '600 from the meal plan' : '0 from meals (not logged yet)'} + ${fmt(burned)} burned</div>`
+      : `<div class="deficit-hype neg">Mark your meals as done on the Food tab and log your steps here to see your deficit.</div>`}
   </div>
-  <div style="height:16px"></div>`;
+  <div style="height:90px"></div>`;
 }
 
 function saveWalk(showToast2) {
-  const steps = parseInt(document.getElementById('inp-steps')?.value)||0;
-  const calBurned = parseInt(document.getElementById('inp-cal')?.value)||0;
-  Store.saveLog(today(), {steps, calBurned});
-  checkAch();
+  const ds = activeDate();
+  const steps = cleanInt(document.getElementById('inp-steps')?.value, 100000);
+  const calBurned = cleanInt(document.getElementById('inp-cal')?.value, 5000);
+  const cur = Store.getLog(ds);
+  if (cur.steps !== steps || cur.calBurned !== calBurned) {
+    Store.saveLog(ds, {steps, calBurned});
+    checkAch();
+  }
   if (showToast2) {
     refresh();
     toast(`${fmt(steps)} steps logged!`);
@@ -1122,20 +1378,22 @@ function saveWalk(showToast2) {
 
 // ---------- WORKOUT ----------
 function renderWorkout() {
-  const p = phase();
-  const dow = dayOfWeek(today());
+  const ds = activeDate();
+  const p = phaseFor(ds);
+  const dow = dayOfWeek(ds);
   const wo = WO[p][dow];
-  const log = Store.getLog(today());
+  const log = Store.getLog(ds);
   const exDone = (log.exDone||'').split(',').filter(Boolean);
-  const n = new Date();
+  const dayWord = _viewYesterday ? 'yesterday' : 'today';
   const phaseNames = ['Foundation (Oct)','Build (Nov)','Intensity (Dec)'];
 
   if (!wo) {
     return `
     <div class="shead">
       <div class="shead-title" style="color:#FF4D6D">💪 Workout</div>
-      <div class="shead-sub">${phaseNames[p]}</div>
+      <div class="shead-sub">${phaseNames[p]} | ${parseDS(ds).toLocaleDateString('en-US',{weekday:'long'})}</div>
     </div>
+    ${dayPicker()}
     <div class="rest-card">
       <div class="rest-icon">${dow === 0 ? '😴' : '🧘'}</div>
       <div class="rest-title">${dow === 0 ? 'Rest Day' : 'Active Recovery'}</div>
@@ -1171,9 +1429,11 @@ function renderWorkout() {
   return `
   <div class="shead">
     <div class="shead-title" style="color:#FF4D6D">💪 Workout</div>
-    <div class="shead-sub">${phaseNames[p]} — ${new Date().toLocaleDateString('en-US',{weekday:'long'})}</div>
+    <div class="shead-sub">${phaseNames[p]} | ${parseDS(ds).toLocaleDateString('en-US',{weekday:'long'})}</div>
   </div>
-  <div class="phase-tag">Phase ${p+1} — ${PHASES[p]}</div>
+  ${dayPicker()}
+  <div class="phase-tag">Phase ${p+1}: ${PHASES[p]}</div>
+  <div class="hint">Warm up with 2 minutes of marching in place. Tick each box as you finish it. Rest as long as you need between moves.</div>
   <div class="wo-card">
     <div class="wo-header">
       <div>
@@ -1188,25 +1448,41 @@ function renderWorkout() {
   ${allDone ? `<div style="background:#06D6A010;border:1.5px solid #06D6A033;border-radius:12px;padding:14px;margin:0 16px 10px;text-align:center"><div style="font-size:20px">🎉</div><div style="color:#06D6A0;font-weight:700;font-size:14px;margin-top:4px">Session complete, Linda!</div></div>` : ''}
   <div style="padding:0 16px;padding-bottom:90px">
     <button class="pbtn ${log.workoutDone?'done':'primary'}" onclick="markWorkout()">
-      ${log.workoutDone ? '✅ Workout marked complete' : 'Mark Full Workout Done'}
+      ${log.workoutDone ? `✅ Workout marked complete for ${dayWord}` : 'Mark Full Workout Done'}
     </button>
-    <div style="font-size:11px;color:#333;text-align:center;margin-top:10px">Tap ▶ on any exercise to watch a tutorial on YouTube</div>
+    ${log.workoutDone ? `<div class="undo-link" onclick="unmarkWorkout()">Marked by mistake? Undo</div>` : ''}
+    <div style="font-size:11px;color:#333;text-align:center;margin-top:10px">Tap ▶ on any exercise to watch a tutorial on YouTube. Did most of it? That counts as done.</div>
   </div>`;
 }
 
 function toggleEx(i) {
-  const log = Store.getLog(today());
+  const ds = activeDate();
+  const log = Store.getLog(ds);
   const exDone = (log.exDone||'').split(',').filter(Boolean);
   const idx = exDone.indexOf(String(i));
   if (idx >= 0) exDone.splice(idx, 1); else exDone.push(String(i));
-  Store.saveLog(today(), {exDone: exDone.join(',')});
+  const patch = {exDone: exDone.join(',')};
+  // Ticking off every exercise marks the whole workout done automatically
+  const wo = WO[phaseFor(ds)][dayOfWeek(ds)];
+  if (wo && exDone.length >= wo.ex.length && !log.workoutDone) { patch.workoutDone = true; patch.woCal = woCalFor(ds); }
+  Store.saveLog(ds, patch);
   checkAch(); refresh();
+  if (patch.workoutDone) toast('Every exercise done. Workout complete!');
 }
 function markWorkout() {
-  Store.saveLog(today(), {workoutDone: true});
-  Store.saveMeta({totalWorkouts: (Store._meta.totalWorkouts||0)+1});
+  const ds = activeDate();
+  if (Store.getLog(ds).workoutDone) { toast('Already marked done. Nice.'); return; }
+  Store.saveLog(ds, {workoutDone: true, woCal: woCalFor(ds)});
+  Store.saveMeta({totalWorkouts: Store.allLogs().filter(l=>l.workoutDone).length});
   checkAch(); refresh();
   toast('Workout done! You showed up for yourself today.');
+}
+function unmarkWorkout() {
+  const ds = activeDate();
+  Store.saveLog(ds, {workoutDone: false, woCal: 0});
+  Store.saveMeta({totalWorkouts: Store.allLogs().filter(l=>l.workoutDone).length});
+  checkAch(); refresh();
+  toast('Undone.');
 }
 
 // ---------- ANALYTICS ----------
@@ -1216,57 +1492,59 @@ function renderAnalytics() {
   const streak = meta.streak || 0;
   const totalSteps = logs.reduce((a,l)=>a+(l.steps||0),0);
   const totalWO = logs.filter(l=>l.workoutDone).length;
-  const defDays = logs.filter(l=>l.foodLogged&&(600+(l.calBurned||0))>0).length;
+  const defDays = logs.filter(isDefDay).length;
   const foodDays = logs.filter(l=>l.foodLogged).length;
   const wis = Store.weighIns();
-  const curW = wis.length ? wis[wis.length-1].weight : (meta.currentWeight||160);
-  const lost = 160 - curW;
+  const curW = wis.length ? wis[wis.length-1].weight : START_WEIGHT;
+  const lost = START_WEIGHT - curW;
+  const lostPos = Math.max(0, lost);
 
   const last7 = Store.last7Logs();
   const maxS = Math.max(...last7.map(l=>l.steps||0), 1);
-  const maxC = Math.max(...last7.map(l=>l.calBurned||0), 1);
+  const maxC = Math.max(...last7.map(l=>burnedCal(l)), 1);
   const dayNames = ['S','M','T','W','T','F','S'];
 
   const stepBars = last7.map(l => {
     const pct = Math.max(2,Math.round((l.steps||0)/maxS*44));
-    return `<div class="mbar" style="height:${pct}px;background:#06D6A0"></div>`;
+    return `<div class="mbar" style="height:${pct}px;background:${(l.steps||0)>0?'#06D6A0':'#1e1e1e'}"></div>`;
   }).join('');
   const calBars = last7.map(l => {
-    const pct = Math.max(2,Math.round((l.calBurned||0)/maxC*44));
-    return `<div class="mbar" style="height:${pct}px;background:#FF4D6D"></div>`;
+    const pct = Math.max(2,Math.round(burnedCal(l)/maxC*44));
+    return `<div class="mbar" style="height:${pct}px;background:${burnedCal(l)>0?'#FF4D6D':'#1e1e1e'}"></div>`;
   }).join('');
 
   const achCount = Store.achievements().length;
   const totalAch = Object.keys(ACH).length;
 
   const showWeighIn = isMonthEnd();
-  const todayWI = wis.find(w=>w.date===today());
+  // one weigh-in per window (Oct 30/31 and Nov 1/2 are all the October weigh-in)
+  const todayWI = wis.find(w=>weighInMonthKey(w.date)===weighInMonthKey(today()));
 
-  const weightSection = wis.length >= 2 ? `
+  const weightSection = wis.length >= 1 ? `
   <div class="acard wide" style="border-color:#845EC222">
     <div class="albl" style="color:#845EC2">Weight Journey</div>
     <div style="display:flex;justify-content:space-between;margin-top:10px">
-      <div><div style="font-size:10px;color:#444">Start</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#555">160 lbs</div></div>
-      <div style="text-align:center"><div style="font-size:10px;color:#444">Lost</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#06D6A0">${lost>0?'-':''}${Math.abs(lost).toFixed(1)} lbs</div></div>
+      <div><div style="font-size:10px;color:#444">Start</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#555">${START_WEIGHT} lbs</div></div>
+      <div style="text-align:center"><div style="font-size:10px;color:#444">Lost</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${lost>=0?'#06D6A0':'#F18F01'}">${lost>=0?'-':'+'}${Math.abs(lost).toFixed(1)} lbs</div></div>
       <div style="text-align:right"><div style="font-size:10px;color:#444">Now</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#fff">${curW} lbs</div></div>
     </div>
     <div style="height:4px;background:#1e1e1e;border-radius:2px;margin-top:12px;overflow:hidden">
-      <div style="height:100%;width:${Math.min(100,Math.round(lost/20*100))}%;background:linear-gradient(90deg,#FF4D6D,#06D6A0);border-radius:2px;transition:width 0.4s"></div>
+      <div style="height:100%;width:${Math.min(100,Math.round(lostPos/GOAL_LBS*100))}%;background:linear-gradient(90deg,#FF4D6D,#06D6A0);border-radius:2px;transition:width 0.4s"></div>
     </div>
-    <div style="font-size:10px;color:#333;margin-top:6px;text-align:center">${Math.round(lost/20*100)}% of 20 lb goal</div>
+    <div style="font-size:10px;color:#333;margin-top:6px;text-align:center">${Math.round(lostPos/GOAL_LBS*100)}% of ${GOAL_LBS} lb goal${lost<0?'. Scales lie week to week. Keep going.':''}</div>
   </div>` : '';
 
   const weighInSection = showWeighIn ? `
   <div class="weighin-card">
-    <div class="wi-title">⚖️ ${new Date().toLocaleString('en-US',{month:'long'})} Weigh-In</div>
+    <div class="wi-title">⚖️ ${weighInLabel()} Weigh-In</div>
     <div class="wi-sub">${todayWI ? `Logged: ${todayWI.weight} lbs` : "It's the end of the month. Want to log your weight? It's optional and only visible to you."}</div>
     ${!todayWI ? `
-    <input class="wi-inp" type="number" id="wi-val" placeholder="e.g. 155" inputmode="decimal" step="0.1">
+    <input class="wi-inp" type="number" id="wi-val" placeholder="e.g. 155" inputmode="decimal" step="0.1" min="80" max="400">
     <button class="wi-btn" onclick="saveWeighIn()">Log My Weight</button>` : ''}
   </div>` : `
   <div style="padding:0 16px 10px">
     <div class="card" style="text-align:center;border-color:#845EC222">
-      <div style="font-size:12px;color:#444;line-height:1.7">Monthly weigh-in available on the last day of each month.<br>It's always optional, Linda.</div>
+      <div style="font-size:12px;color:#444;line-height:1.7">Monthly weigh-in opens on the last 2 days of each month.<br>It's always optional, Linda.</div>
     </div>
   </div>`;
 
@@ -1291,14 +1569,15 @@ function renderAnalytics() {
     </div>
     <div class="acard" style="border-color:#845EC222">
       <div class="anum" style="color:#845EC2">${defDays}</div>
-      <div class="albl">Days in Deficit</div>
+      <div class="albl">Deficit Days</div>
+      <div class="asub">ate the plan and moved</div>
     </div>
     <div class="acard wide" style="border-color:#06D6A022">
-      <div class="albl" style="color:#06D6A0;margin-bottom:8px">Steps — Last 7 Days</div>
+      <div class="albl" style="color:#06D6A0;margin-bottom:8px">Steps, Last 7 Days</div>
       <div class="mini-bars">${stepBars}</div>
     </div>
     <div class="acard wide" style="border-color:#FF4D6D22">
-      <div class="albl" style="color:#FF4D6D;margin-bottom:8px">Calories Burned — Last 7 Days</div>
+      <div class="albl" style="color:#FF4D6D;margin-bottom:8px">Calories Burned, Last 7 Days</div>
       <div class="mini-bars">${calBars}</div>
     </div>
     ${weightSection}
@@ -1322,8 +1601,8 @@ function renderAnalytics() {
 }
 
 function saveWeighIn() {
-  const val = parseFloat(document.getElementById('wi-val')?.value);
-  if (!val || val < 80 || val > 400) { toast('Enter a valid weight'); return; }
+  const val = cleanWeight(document.getElementById('wi-val')?.value);
+  if (val === null) { toast('Enter a weight between 80 and 400'); return; }
   Store.addWeighIn(today(), val);
   checkAch(); refresh();
   toast(`${val} lbs logged. Proud of you for showing up.`);
@@ -1341,9 +1620,8 @@ function renderHistory() {
 
   const rows = logs.map(l => {
     const steps = l.steps||0;
-    const deficit = 600+(l.calBurned||0);
-    const wg = waterGoal();
-    const score = [l.foodLogged, steps>=10000||isRestDay(l.date), (l.water||0)>=4, l.workoutDone||isRestDay(l.date)].filter(Boolean).length;
+    const deficit = dayDeficit(l);
+    const score = l.cheat ? 4 : [l.foodLogged, steps>=10000||isRestDay(l.date), (l.water||0)>=Math.min(4, waterGoalFor(l.date)), l.workoutDone||isRestDay(l.date)].filter(Boolean).length;
     const scoreColor = score===4?'#06D6A0':score>=2?'#F18F01':'#333';
     return `
     <div class="hday">
@@ -1352,11 +1630,12 @@ function renderHistory() {
         <div class="hday-score" style="color:${scoreColor}">${score}/4</div>
       </div>
       <div class="hm-row">
+        ${l.cheat?`<span class="hm f">🍕 Cheat day</span>`:''}
         ${steps>0?`<span class="hm s">👟 ${fmt(steps)}</span>`:''}
-        ${l.foodLogged?`<span class="hm f">🍽️ Meals</span>`:''}
-        ${(l.water||0)>0?`<span class="hm w">💧 ${l.water} glasses</span>`:''}
+        ${l.foodLogged&&!l.cheat?`<span class="hm f">🍽️ Meals</span>`:''}
+        ${(l.water||0)>0?`<span class="hm w">💧 ${Number(l.water)} glasses</span>`:''}
         ${l.workoutDone?`<span class="hm wk">💪 Workout</span>`:''}
-        ${deficit>0&&l.foodLogged?`<span class="hm d">-${fmt(deficit)} cal</span>`:''}
+        ${deficit>0?`<span class="hm d">-${fmt(deficit)} cal</span>`:''}
       </div>
     </div>`;
   }).join('');
@@ -1366,54 +1645,55 @@ function renderHistory() {
     <div class="shead-title" style="color:#00B4D8">📅 History</div>
     <div class="shead-sub">Your journey, day by day</div>
   </div>
-  <div style="height:10px"></div>
+  <div class="hint" style="padding-top:10px">Score out of 4: meals, 10K steps, water, workout. Rest days count steps and workout as done.</div>
   ${rows}
-  <div style="height:20px"></div>`;
-}
-
-// ---------- SETUP ----------
-function completeSetup() {
-  const pid = document.getElementById('fbPid').value.trim();
-  const key = document.getElementById('fbKey').value.trim();
-  if (!pid || !key) { alert('Please enter both Firebase values'); return; }
-  localStorage.setItem('ll_fb_pid', pid);
-  localStorage.setItem('ll_fb_key', key);
-  document.getElementById('setup').classList.add('hidden');
-  initApp();
-}
-function skipSetup() {
-  localStorage.setItem('ll_setup_done', '1');
-  document.getElementById('setup').classList.add('hidden');
-  initApp();
+  <div style="height:90px"></div>`;
 }
 
 // ---------- INIT ----------
+// Pull from Firebase and redraw if anything changed, unless she is mid-typing.
+async function syncAndRefresh() {
+  const changed = await Store.syncFirebase();
+  if (!changed) return;
+  const typing = document.activeElement && document.activeElement.tagName === 'INPUT';
+  if (!typing) { updateStreak(); refresh(); }
+}
+function closeWelcome() {
+  document.getElementById('welcome').classList.add('hidden');
+  Store.saveMeta({welcomed: true});
+}
 async function initApp() {
   Store.load();
   go('home');
-  // Background Firebase sync
-  setTimeout(()=>Store.syncFirebase().then(()=>{ if(curTab==='analytics')refresh(); }), 1500);
+  await syncAndRefresh();
+  // First time ever (on any device): show the 20-second welcome from Robi
+  if (!Store._meta.welcomed) document.getElementById('welcome').classList.remove('hidden');
+  // Re-sync whenever she comes back to the app (switching devices, reopening from the home screen)
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) syncAndRefresh(); });
+  // Midnight rollover: if the app is left open overnight, redraw for the new day
+  setInterval(() => {
+    if (window._lastDay === today()) return;
+    window._lastDay = today(); _viewYesterday = false;
+    const typing = document.activeElement && document.activeElement.tagName === 'INPUT';
+    if (!typing) { updateStreak(); refresh(); }
+  }, 60000);
+  // Push anything still debounced when she leaves the app
+  window.addEventListener('pagehide', fbFlush);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) fbFlush(); });
+  window._lastDay = today();
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  // Check if Firebase is pre-configured in the HTML (Robi's edit)
-  if (FB_ON) {
-    localStorage.setItem('ll_setup_done', '1');
+window.addEventListener('DOMContentLoaded', async () => {
+  // Robi: open the app with ?reset=1 on the end of the URL to wipe all data (local + Firebase). Use once to clear test data.
+  if (location.search.includes('reset=1')) {
+    if (confirm('Wipe ALL of Linda\'s data, on every device? This cannot be undone.')) {
+      await Store.resetAll();
+      alert('All data cleared.');
+    }
+    location.replace(location.pathname);
+    return;
   }
-  // Check if runtime FB config saved (from setup screen)
-  const savedPid = localStorage.getItem('ll_fb_pid');
-  const savedKey = localStorage.getItem('ll_fb_key');
-  if (savedPid && savedKey) {
-    window.FB_RUNTIME_PID = savedPid;
-    window.FB_RUNTIME_KEY = savedKey;
-  }
-
-  const setupDone = localStorage.getItem('ll_setup_done');
-  if (!setupDone && !FB_ON) {
-    document.getElementById('setup').classList.remove('hidden');
-  } else {
-    initApp();
-  }
+  initApp();
 });
 </script>
 </body>
